@@ -6,7 +6,7 @@ const LINKING_ERROR =
   '- You rebuilt the app after installing the package\n' +
   '- You are not using Expo Go\n';
 
-const VantiqInterfaceLibrary = NativeModules.VantiqInterfaceLibrary
+export const VantiqInterfaceLibrary = NativeModules.VantiqInterfaceLibrary
   ? NativeModules.VantiqInterfaceLibrary
   : new Proxy(
       {},
@@ -19,4 +19,12 @@ const VantiqInterfaceLibrary = NativeModules.VantiqInterfaceLibrary
 
 export function multiply(a: number, b: number): Promise<number> {
   return VantiqInterfaceLibrary.multiply(a, b);
+}
+
+export function add(a: number, b: number): Promise<number> {
+  return VantiqInterfaceLibrary.add(a, b);
+}
+
+export function testOne(server:string,namespace:string): Promise<string> {
+  return VantiqInterfaceLibrary.testOne(server,namespace);
 }

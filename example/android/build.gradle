@@ -39,5 +39,32 @@ allprojects {
         }
         mavenCentral()
         google()
+        mavenLocal()
     }
+
 }
+
+/*
+subprojects {
+  plugins.withType(com.android.build.gradle.BasePlugin) {
+    android {
+      defaultConfig {
+        manifestPlaceholders = [appAuthRedirectScheme: "com.vantiq.mobile"]
+      }
+    }
+  }
+}
+*/
+
+/*
+apply plugin: "com.android.library"
+
+android {
+  namespace "com.vantiqinterfacelibrary"
+  compileSdkVersion 34
+  defaultConfig {
+    manifestPlaceholders = [appAuthRedirectScheme: "Xcom.vantiq.mobile"]
+  }
+}
+*/
+

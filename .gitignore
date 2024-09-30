@@ -1,3 +1,6 @@
+.gitignore
+android/gradle
+example/dist
 # OSX
 #
 .DS_Store
@@ -35,6 +38,7 @@ project.xcworkspace
 .cxx
 .gradle
 .idea
+.iml
 .project
 .settings
 local.properties
