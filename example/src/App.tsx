@@ -2,9 +2,37 @@
 import { StyleSheet, View, Button } from 'react-native';
 import { initialize, multiply, add, testOne } from 'vantiq-interface-library';
 
+import { useEffect } from 'react';
 
 export default function App() {
 
+  useEffect(() => {
+    // Code to run on component mount
+    console.log("INITIALIZING Vantiq Interface");
+    
+    let server:string = "http://10.0.0.208:8080";
+    let namespace:string = "Scratch1";
+
+    //server = "https://test.vantiq.com";
+    //namespace = "SteveNS1";
+
+    
+    initialize(server,namespace).then(function(value:any)
+        {
+          console.log(`Vantiq Interface Initialized - server=${server} namespace=${namespace}`);
+        },
+        function(err:string)
+        {
+          console.log("Vantiq Interface FAIL");
+        });
+    
+    
+    // Optional cleanup function
+    return () => {
+      console.log("UNMOUNTING Vantiq Interface");
+    };
+  }, []); //
+  
 
   const onAdd = () => {
     let a:number = 5;
@@ -38,27 +66,6 @@ export default function App() {
         });
   };
 
-  const onInitialize= () => {
-
-    console.log('Invoke Initialize');
-
-    let server:string = "http://10.0.0.208:8080";
-    let namespace:string = "Scratch1";
-
-    //server = "https://test.vantiq.com";
-    //namespace = "SteveNS1";
-
-    
-    initialize(server,namespace).then(function(value:any)
-        {
-          console.log("Initialize");
-        },
-        function(err:string)
-        {
-          console.log("Initialize FAIL");
-        });
-
-  };
   
   const onTest1= () => {
 
@@ -78,11 +85,6 @@ export default function App() {
   return (
     <View style={styles.container}>
 
-      <Button
-        title="Click to Initialize"
-        color="#555555"
-        onPress={onInitialize}
-      />
       
       <Button
         title="Click to Multiply"
