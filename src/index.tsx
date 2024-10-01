@@ -25,6 +25,10 @@ export function add(a: number, b: number): Promise<number> {
   return VantiqInterfaceLibrary.add(a, b);
 }
 
-export function testOne(server:string,namespace:string): Promise<string> {
-  return VantiqInterfaceLibrary.testOne(server,namespace);
+export function initialize(server:string,namespace:string): Promise<string> {
+  return VantiqInterfaceLibrary.initialize(server,namespace);
+}
+
+export function testOne(): Promise<string> {
+  return VantiqInterfaceLibrary.testOne();
 }

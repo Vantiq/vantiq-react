@@ -33,8 +33,9 @@ public class VantiqInterfaceLibraryModule extends ReactContextBaseJavaModule {
 
       VLog.i(TAG, "VantiqInterfaceLibraryModule Start");
 
-      VantiqAndroidLibrary val = VantiqAndroidLibrary.initialize(reactContext);
+      ///VantiqAndroidLibrary val = VantiqAndroidLibrary.initialize(reactContext);
     }
+
 
 
     public Activity getActivity()
@@ -64,12 +65,24 @@ public class VantiqInterfaceLibraryModule extends ReactContextBaseJavaModule {
       promise.resolve(sum);
     }
 
+  @ReactMethod
+  public void initialize(String server, String namespace, Promise promise)
+  {
+    VLog.i(TAG, "initialize");
+
+    Utilities.initialize(getReactApplicationContext(),server,namespace,new Utilities.TaskListener() {
+      @Override
+      public void onComplete(Object obj) {
+        promise.resolve(true);
+      }
+    });
+  }
 
   @ReactMethod
-  public void testOne(String server, String namespace, Promise promise)
+  public void testOne(Promise promise)
   {
     VLog.i(TAG, "testOne");
-    Utilities.testOne(getReactApplicationContext(),this.getActivity(), new Utilities.TaskListener() {
+    Utilities.testOne(this.getActivity(), new Utilities.TaskListener() {
       @Override
       public void onComplete(Object obj)
       {
@@ -84,7 +97,7 @@ public class VantiqInterfaceLibraryModule extends ReactContextBaseJavaModule {
           promise.reject(result.errorMessage);
         }
       }
-    }, server, namespace);
+    });
   }
 }
 

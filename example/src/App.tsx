@@ -1,6 +1,6 @@
 
 import { StyleSheet, View, Button } from 'react-native';
-import { multiply, add, testOne } from 'vantiq-interface-library';
+import { initialize, multiply, add, testOne } from 'vantiq-interface-library';
 
 
 export default function App() {
@@ -38,18 +38,34 @@ export default function App() {
         });
   };
 
-  const onTest1= () => {
+  const onInitialize= () => {
 
-    console.log('Invoke Test1');
+    console.log('Invoke Initialize');
 
     let server:string = "http://10.0.0.208:8080";
     let namespace:string = "Scratch1";
 
+    //server = "https://test.vantiq.com";
+    //namespace = "SteveNS1";
 
-    server = "https://test.vantiq.com";
-    namespace = "SteveNS1";
+    
+    initialize(server,namespace).then(function(value:any)
+        {
+          console.log("Initialize");
+        },
+        function(err:string)
+        {
+          console.log("Initialize FAIL");
+        });
 
-    testOne(server,namespace).then(function(results:string)
+  };
+  
+  const onTest1= () => {
+
+    console.log('Invoke Test1');
+
+
+    testOne().then(function(results:string)
                       {
                         console.log(`TestOne Results = ${results}`);
                       },
@@ -62,6 +78,12 @@ export default function App() {
   return (
     <View style={styles.container}>
 
+      <Button
+        title="Click to Initialize"
+        color="#555555"
+        onPress={onInitialize}
+      />
+      
       <Button
         title="Click to Multiply"
         color="#00ff00"
