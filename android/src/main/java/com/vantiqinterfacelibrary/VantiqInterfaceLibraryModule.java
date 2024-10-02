@@ -13,7 +13,7 @@ import io.vantiq.androidlib.VantiqAndroidLibrary;
 
 public class VantiqInterfaceLibraryModule extends ReactContextBaseJavaModule {
     private static final String TAG = "VantiqInterfaceLibraryModule";
-    private static final String NAME = "VantiqInterfaceLibrary";
+    private static final String NAME = "VantiqReact";
 
     static public VantiqInterfaceLibraryModule INSTANCE;
 
@@ -31,7 +31,7 @@ public class VantiqInterfaceLibraryModule extends ReactContextBaseJavaModule {
 
       VLog vl = new VLog();
 
-      VLog.i(TAG, "VantiqInterfaceLibraryModule Start");
+      VLog.i(TAG, "VantiqInterfaceLibraryModule Start: " + NAME);
 
       ///VantiqAndroidLibrary val = VantiqAndroidLibrary.initialize(reactContext);
     }

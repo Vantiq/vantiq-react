@@ -1,6 +1,7 @@
 
 import { StyleSheet, View, Button } from 'react-native';
-import { initialize, multiply, add, testOne } from 'vantiq-interface-library';
+import { initialize, multiply, add, testOne } from 'vantiq-react';
+
 
 import { useEffect } from 'react';
 
@@ -16,7 +17,7 @@ export default function App() {
     //server = "https://test.vantiq.com";
     //namespace = "SteveNS1";
 
-    
+
     initialize(server,namespace).then(function(value:any)
         {
           console.log(`Vantiq Interface Initialized - server=${server} namespace=${namespace}`);
@@ -25,7 +26,6 @@ export default function App() {
         {
           console.log("Vantiq Interface FAIL");
         });
-    
     
     // Optional cleanup function
     return () => {

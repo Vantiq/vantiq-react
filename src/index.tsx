@@ -1,13 +1,15 @@
 import { NativeModules, Platform } from 'react-native';
 
+
+
 const LINKING_ERROR =
   `The package 'vantiq-interface-library' doesn't seem to be linked. Make sure: \n\n` +
   Platform.select({ ios: "- You have run 'pod install'\n", default: '' }) +
   '- You rebuilt the app after installing the package\n' +
   '- You are not using Expo Go\n';
 
-export const VantiqInterfaceLibrary = NativeModules.VantiqInterfaceLibrary
-  ? NativeModules.VantiqInterfaceLibrary
+export const VantiqInterfaceLibrary = NativeModules.VantiqReact
+  ? NativeModules.VantiqReact
   : new Proxy(
       {},
       {
@@ -32,3 +34,4 @@ export function initialize(server:string,namespace:string): Promise<string> {
 export function testOne(): Promise<string> {
   return VantiqInterfaceLibrary.testOne();
 }
+

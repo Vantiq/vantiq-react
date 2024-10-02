@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "vantiq-interface-library": ["./src/index"]
+      "vantiq-react": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
