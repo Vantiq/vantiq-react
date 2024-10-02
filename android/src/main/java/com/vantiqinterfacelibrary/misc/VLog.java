@@ -1,12 +1,12 @@
 package com.vantiqinterfacelibrary.misc;
 
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.os.Build;
+//import android.content.Context;
+//import android.content.Intent;
+//import android.content.pm.PackageInfo;
+//import android.content.pm.PackageManager;
+//import android.os.Build;
 import android.util.Log;
-import androidx.core.content.FileProvider;
+//import androidx.core.content.FileProvider;
 //import com.vantiqinterfacelibrary.VantiqInterfaceLibraryModule;
 import org.joda.time.DateTime;
 
