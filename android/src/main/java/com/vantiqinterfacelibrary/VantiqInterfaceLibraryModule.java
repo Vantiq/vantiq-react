@@ -63,6 +63,7 @@ public class VantiqInterfaceLibraryModule extends ReactContextBaseJavaModule {
       VLog.i(TAG, "add");
       double sum = Utilities.add(a,b);
       promise.resolve(sum);
+      //promise.reject("Error");
     }
 
   @ReactMethod

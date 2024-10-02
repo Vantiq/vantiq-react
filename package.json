@@ -1,5 +1,5 @@
 {
-  "name": "vantiq-interface-library",
+  "name": "vantiq-react",
   "version": "0.1.0",
   "description": "Vantiq Interface Library",
   "source": "./src/index.tsx",
