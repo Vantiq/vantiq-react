@@ -12962,9 +12962,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"vantiq-interface-library@workspace:.":
+"vantiq-react@workspace:.":
   version: 0.0.0-use.local
-  resolution: "vantiq-interface-library@workspace:."
+  resolution: "vantiq-react@workspace:."
   dependencies:
     "@commitlint/config-conventional": ^17.0.2
     "@evilmartians/lefthook": ^1.5.0
