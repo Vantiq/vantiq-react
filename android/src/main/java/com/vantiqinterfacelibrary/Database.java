@@ -266,6 +266,87 @@ public class Database
         }
     }
 
+
+    public void count(String type, String where, Promise promise)
+    {
+        VLog.i(TAG, "count");
+
+        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+        Account a = val.account;
+
+        Vantiq vantiqSDK = new Vantiq(a.getServer());
+        vantiqSDK.setAccessToken(a.getAccessToken());
+        vantiqSDK.setUsername(a.getUsername());
+
+        //
+        //  Turn the "where" parameter into a JsonObject
+        //
+        JsonObject whereObject = null;
+
+        if (where != null)
+        {
+            try
+            {
+                whereObject = new JsonParser().parse(where).getAsJsonObject();
+            }
+            catch (Exception e)
+            {
+                WritableMap map = Arguments.createMap();
+                String errorMessage = e.getLocalizedMessage();
+                map.putString("errorMsg", errorMessage);
+                promise.reject("PARSEFAILED", errorMessage, map);
+                return;
+            }
+        }
+
+        VantiqResponse vr = null;
+        String exMessage = null;
+
+        try
+        {
+            vr = vantiqSDK.count(type, whereObject);
+        }
+        catch (Exception ex)
+        {
+            exMessage = ex.getLocalizedMessage();
+        }
+
+        if (exMessage != null)
+        {
+            this.reject("COUNTFAILED",exMessage, promise);
+        }
+        else if (vr.hasException())
+        {
+            Throwable ex = vr.getException();
+            this.reject("COUNTFAILED",ex.getLocalizedMessage(), promise);
+        }
+        //
+        //  We don't really know or care why this request failed, just that it did. Keep trying with
+        //  other users in the same namespace until we find one that works.
+        //
+        else if (vr.isSuccess())
+        {
+            Object body = vr.getBody();
+            int count = ((Integer) body).intValue();
+            VLog.i(TAG, "Items returned: " + count);
+            promise.resolve(count);
+        }
+        else if (vr.getStatusCode() == 401)
+        {
+            this.reject("COUNT401","Access Token invalid", promise);
+        }
+        else
+        {
+            List<VantiqError> ves = vr.getErrors();
+            for (int k = 0; k < ves.size(); k++)
+            {
+                VantiqError ve = ves.get(k);
+                this.reject(ve.getCode(),ve.getMessage(), promise);
+                break;
+            }
+        }
+    }
+
     private void setPrimitive(Bundle bundle, String key, JsonElement je)
     {
         if (je instanceof JsonArray)
@@ -350,16 +431,13 @@ public class Database
                         ArrayList<String> stringArrayList = new ArrayList<String>();
                         bundle.putStringArrayList(key, stringArrayList);
                     }
-
                 }
                 else
                 {
                     ArrayList<String> stringArrayList = new ArrayList<String>();
                     bundle.putStringArrayList(key, stringArrayList);
                 }
-
             }
-
         }
         else if (je instanceof JsonPrimitive)
         {

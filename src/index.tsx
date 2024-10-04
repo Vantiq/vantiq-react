@@ -46,3 +46,7 @@ export function selectOne(type: string, id: string): Promise<string> {
     return VantiqInterfaceLibrary.selectOne(type, id);
 }
 
+export function count(type: string, where: string): Promise<string> {
+    return VantiqInterfaceLibrary.count(type, where);
+}
+

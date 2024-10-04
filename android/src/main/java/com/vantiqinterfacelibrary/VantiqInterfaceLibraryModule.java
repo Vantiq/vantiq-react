@@ -190,5 +190,11 @@ public class VantiqInterfaceLibraryModule extends ReactContextBaseJavaModule
     {
         this.db.selectOne(type, id, promise);
     }
+
+    @ReactMethod
+    public void count(String type, String where, Promise promise)
+    {
+        this.db.count(type,  where, promise);
+    }
 }
 

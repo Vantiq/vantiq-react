@@ -1,5 +1,5 @@
 import {StyleSheet, View, Button} from 'react-native';
-import {init, multiply, add, authWithInternal, authWithOAuth, select, selectOne} from 'vantiq-react';
+import {init, multiply, add, authWithInternal, authWithOAuth, select, selectOne, count} from 'vantiq-react';
 
 
 import {useEffect} from 'react';
@@ -25,7 +25,7 @@ export default function App() {
             },
             function (error: any) {
                 let err: string = JSON.stringify(error, null, 3);
-                console.log(`init FAIL: ${err}`);
+                console.error(`init FAIL: ${err}`);
             });
 
         // Optional cleanup function
@@ -45,7 +45,7 @@ export default function App() {
                 console.log(`Add ${a} + ${b} = ${value}`);
             },
             function (err: string) {
-                console.log(`Error ${err}`);
+                console.error(`Error ${err}`);
             });
     };
 
@@ -59,7 +59,7 @@ export default function App() {
                 console.log(`Multiply ${a} * ${b} = ${value}`);
             },
             function (err: string) {
-                console.log(`Error ${err}`);
+                console.error(`Error ${err}`);
             });
     };
 
@@ -82,7 +82,25 @@ export default function App() {
                 console.log(`select results=${JSON.stringify(results, null, 3)}`)
             },
             function (error: any) {
-                console.log(`select REJECT error=${JSON.stringify(error, null, 3)}`)
+                console.error(`select REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+    const onCount = () => {
+        let type: string = "a.b.c.MyType";
+        // @ts-ignore
+        let where: string = null;
+        // @ts-ignore
+
+        //where = "{ccc:\"c\"}";
+
+        console.log('Invoke Count');
+
+        count(type,where).then(function (results: any) {
+                console.log(`select results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`select REJECT error=${JSON.stringify(error, null, 3)}`)
             })
     };
 
@@ -96,7 +114,7 @@ export default function App() {
                 console.log(`select results=${JSON.stringify(results, null, 3)}`)
             },
             function (error: any) {
-                console.log(`select REJECT error=${JSON.stringify(error, null, 3)}`)
+                console.error(`select REJECT error=${JSON.stringify(error, null, 3)}`)
             })
     };
 
@@ -124,25 +142,25 @@ export default function App() {
                         console.log(`Validation: authValid=${authenticationState.authValid} authState=${auth}`);
                     },
                     function (error: any) {
-                        console.log(`Validation INTERNAL REJECT error=${JSON.stringify(error)}`)
+                        console.error(`Validation INTERNAL REJECT error=${JSON.stringify(error)}`)
                     }
                 );
 
             } else if (authenticationState.serverType == "oauth") {
                 console.log("Validation: OAUTH");
 
-                authWithOAuth("redirectURL", "clientId").then(
+                authWithOAuth("com.vantiq.mobile", "vantiqMobile").then(
                     function (newAuthState: any) {
                         authenticationState = newAuthState;
                         let auth: string = JSON.stringify(authenticationState, null, 3)
                         console.log(`Validation: authValid=${authenticationState.authValid} authState=${auth}`);
                     },
                     function (error: any) {
-                        console.log(`Validation OAUTH REJECT error=${JSON.stringify(error)}`);
+                        console.error(`Validation OAUTH REJECT error=${JSON.stringify(error)}`);
                     }
                 );
             } else {
-                console.log(`Validation FAIL: serverType invalid=${authenticationState.serverType}`);
+                console.error(`Validation FAIL: serverType invalid=${authenticationState.serverType}`);
             }
         }
     };
@@ -179,6 +197,12 @@ export default function App() {
                 title="SelectOne"
                 color="#cc00cc"
                 onPress={onSelectOne}
+            />
+
+            <Button
+                title="Count"
+                color="#220022"
+                onPress={onCount}
             />
         </View>
     );
