@@ -38,3 +38,7 @@ export function authWithInternal(username:string,password:string): Promise<strin
   return VantiqInterfaceLibrary.authWithInternal(username,password);
 }
 
+export function select(type:string,props:string[],where:string,sortSpec:string,limit:number): Promise<string> {
+  return VantiqInterfaceLibrary.select(type,props,where,sortSpec,limit);
+}
+

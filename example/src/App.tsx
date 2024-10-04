@@ -1,6 +1,6 @@
 
 import { StyleSheet, View, Button } from 'react-native';
-import { init, multiply, add, authWithInternal, authWithOAuth } from 'vantiq-react';
+import { init, multiply, add, authWithInternal, authWithOAuth, select } from 'vantiq-react';
 
 
 import { useEffect } from 'react';
@@ -16,8 +16,8 @@ export default function App() {
     let server:string = "http://10.0.0.208:8080";
     let namespace:string = "Scratch1";
 
-    server = "https://test.vantiq.com";
-    namespace = "SteveNS1";
+    //server = "https://test.vantiq.com";
+    //namespace = "SteveNS1";
 
     init(server,namespace).then(function(authState:any)
         {
@@ -69,6 +69,28 @@ export default function App() {
           console.log(`Error ${err}`);
         });
   };
+
+  const onSelect = () => {
+    let type:string = "a.b.c.MyType";
+    // @ts-ignore
+    let props:string[] = null; //["aaa","bbb"];
+    // @ts-ignore
+    let where:string = null;
+    // @ts-ignore
+    let sortSpec:string = null;
+    let limit:number = 500;
+
+    console.log('Invoke Select');
+
+    select(type,props,where,sortSpec,limit).then(function(results:any)
+       {
+         console.log(`select results=${JSON.stringify(results)}`)
+       },
+       function(error:any)
+       {
+         console.log(`select REJECT error=${JSON.stringify(error)}`)
+       })
+    };
 
 
   const onValidate= () => {
@@ -148,6 +170,12 @@ export default function App() {
         title="Validate"
         color="#00ffff"
         onPress={onValidate}
+      />
+
+      <Button
+        title="Select"
+        color="#880088"
+        onPress={onSelect}
       />
     </View>
   );

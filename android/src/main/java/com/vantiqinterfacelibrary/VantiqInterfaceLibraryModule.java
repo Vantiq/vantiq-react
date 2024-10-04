@@ -12,17 +12,28 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableType;
+import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.vantiqinterfacelibrary.misc.*;
 import io.vantiq.androidlib.Utilities;
 import io.vantiq.androidlib.VantiqAndroidLibrary;
 import io.vantiq.androidlib.misc.Account;
+import io.vantiq.client.SortSpec;
+import io.vantiq.client.Vantiq;
+import io.vantiq.client.VantiqError;
+import io.vantiq.client.VantiqResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import android.os.Bundle;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 
@@ -182,6 +193,133 @@ public class VantiqInterfaceLibraryModule extends ReactContextBaseJavaModule {
       }
     });
 
+
+  }
+
+  @ReactMethod
+  public void select(String type, ReadableArray props, String where, String sort, double limit, Promise promise)
+  {
+    VLog.i(TAG, "select");
+
+    VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+    Account a = val.account;
+
+    VLog.i(TAG, "type=" + type);
+    VLog.i(TAG, "props=" + (props != null ? props.toString() : "EMPTY"));
+    VLog.i(TAG, "where=" + where);
+    VLog.i(TAG, "sort=" + sort);
+    VLog.i(TAG, "limit=" + limit);
+
+    Vantiq vantiqSDK = new Vantiq(a.getServer());
+    vantiqSDK.setAccessToken(a.getAccessToken());
+    vantiqSDK.setUsername(a.getUsername());
+
+    ArrayList propsArray = null;
+
+    if (props != null)
+    {
+      propsArray = props.toArrayList();
+    }
+
+    VantiqResponse vr = null;
+    String exMessage = null;
+
+    SortSpec sortSpec = new SortSpec("ars_createdAt",true);
+
+    try
+    {
+      vr = vantiqSDK.select(type,propsArray, where, sortSpec, (long)limit);
+    }
+    catch (Exception ex)
+    {
+      exMessage = ex.getLocalizedMessage();
+    }
+
+    VLog.i(TAG, "returned");
+
+    if (exMessage != null)
+    {
+      VLog.e(TAG,"select failed with exception: " + exMessage);
+      WritableMap map = Arguments.createMap();
+      map.putString("errorMsg", exMessage);
+      promise.reject("SELECTFAILED", exMessage, map);
+      return;
+    }
+    else if (vr.hasException())
+    {
+      Throwable ex = vr.getException();
+      VLog.e(TAG,"select failed with throwable: " + ex.getLocalizedMessage());
+      WritableMap map = Arguments.createMap();
+      map.putString("errorMsg", ex.getLocalizedMessage());
+      promise.reject("SELECTFAILED", ex.getLocalizedMessage(), map);
+      return;
+    }
+    //
+    //  We don't really know or care why this request failed, just that it did. Keep trying with
+    //  other users in the same namespace until we find one that works.
+    //
+    else if (vr.isSuccess())
+    {
+      Object body = vr.getBody();
+      List<JsonObject> results = (List<JsonObject>) body;
+
+      WritableArray ary = Arguments.createArray();
+
+      for (int i = 0; i < results.size(); i++)
+      {
+        JsonObject jo = results.get(i);
+
+        //String s = jo.toString();
+        //JSONObject gjo = null;
+        try {
+          /*
+          gjo = new JSONObject(s);
+          BundleJSONConverter bjc = new BundleJSONConverter();
+          Bundle bundle = bjc.convertToBundle(gjo);
+          WritableMap map = Arguments.fromBundle(bundle);
+          ary.pushMap(map);
+          */
+
+          GBundleJSONConverter bjc = new GBundleJSONConverter();
+          Bundle bundle = bjc.convertToBundle(jo);
+          WritableMap map = Arguments.fromBundle(bundle);
+          ary.pushMap(map);
+
+        } catch (JsonParseException ex) {
+          WritableMap map = Arguments.createMap();
+          map.putString("errorMsg", ex.getLocalizedMessage());
+          promise.reject("SELECTFAILED", ex.getLocalizedMessage(), map);
+          return;
+        }
+
+      }
+
+
+      promise.resolve(ary);
+    }
+    else if (vr.getStatusCode() == 401)
+    {
+      WritableMap map = Arguments.createMap();
+      map.putString("errorMsg", "Access Token invalid");
+      promise.reject("SELECT401", "Access Token invalid", map);
+      return;
+    }
+    else
+    {
+      List<VantiqError> ves = vr.getErrors();
+      for (int k=0; k<ves.size(); k++)
+      {
+        VantiqError ve = ves.get(k);
+        VLog.e(TAG,ve.getCode() + " - " + ve.getMessage());
+
+        String err = ve.getCode() + " - " + ve.getMessage();
+
+        WritableMap map = Arguments.createMap();
+        map.putString("errorMsg", err);
+        promise.reject(ve.getCode(), ve.getMessage(), map);
+        return;
+      }
+    }
 
   }
 }
