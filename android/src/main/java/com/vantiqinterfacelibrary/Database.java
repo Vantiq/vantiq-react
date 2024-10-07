@@ -204,6 +204,15 @@ public class Database
     {
         VLog.i(TAG, "select");
 
+        if (!validate())
+        {
+            VLog.i(TAG, "Access Token INVALID");
+        }
+        else
+        {
+            VLog.i(TAG, "Access Token Valid");
+        }
+
         VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         Account a = val.account;
 
@@ -1055,6 +1064,43 @@ public class Database
                 break;
             }
         }
+    }
+
+    public boolean validate()
+    {
+        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+        Account a = val.account;
+        String accessToken = a.getAccessToken();
+
+        if (accessToken != null)
+        {
+            Vantiq vantiqSDK = new Vantiq(a.getServer());
+            vantiqSDK.setAccessToken(accessToken);
+
+            ArrayList<String> props = new ArrayList();
+            props.add("username");
+
+            try
+            {
+                VantiqResponse vr = vantiqSDK.select("system.users", props,null, null);
+
+                if (vr.isSuccess())
+                {
+                    ArrayList ary = (ArrayList) vr.getBody();
+
+                    if (ary.size() == 1)
+                    {
+                        JsonObject jo = (JsonObject) ary.get(0);
+                        return (true);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+        }
+
+        return false;
     }
 
 }

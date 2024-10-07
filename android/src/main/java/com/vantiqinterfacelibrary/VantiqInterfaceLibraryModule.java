@@ -35,7 +35,7 @@ public class VantiqInterfaceLibraryModule extends ReactContextBaseJavaModule
 
         INSTANCE = this;
 
-        this.db = new Database(this);
+        db = new Database(this);
 
         VLog vl = new VLog();
 
