@@ -1,5 +1,6 @@
 import {StyleSheet, View, Button} from 'react-native';
-import {init, multiply, add, authWithInternal, authWithOAuth, select, selectOne, count} from 'vantiq-react';
+import {init, multiply, add, authWithInternal, authWithOAuth, select, selectOne, count,
+    insert, update, upsert, deleteOne, deleteWhere, execute, publish} from 'vantiq-react';
 
 
 import {useEffect} from 'react';
@@ -86,6 +87,49 @@ export default function App() {
             })
     };
 
+
+    const onExecute = () => {
+        let procedureName: string = "TestProc";
+        let params: any = {
+            aaa: 4,
+            bbb: 6
+        };
+
+        let paramsAsString = JSON.stringify(params);
+
+        console.log('Invoke Execute');
+
+        //procedureName = "NoParms";
+        //paramsAsString = null;
+
+        execute(procedureName,  paramsAsString).then(function (results: any) {
+                console.log(`execute results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`execute REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+
+    const onDelete = () => {
+        let type: string = "a.b.c.MyType";
+        // @ts-ignore
+        let where: string = {
+            bbb: "b2"
+        };
+
+        let whereAsString = JSON.stringify(where);
+
+        console.log('Invoke Select');
+
+        deleteWhere(type,  whereAsString).then(function (results: any) {
+                console.log(`delete results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`delete REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
     const onCount = () => {
         let type: string = "a.b.c.MyType";
         // @ts-ignore
@@ -104,6 +148,89 @@ export default function App() {
             })
     };
 
+    const onInsert = () => {
+        let type: string = "a.b.c.MyType";
+        let object: any = {
+            MyBoolean: false,
+            ccc: "CCCC INSERT",
+            bbb: "BBBB INSERT",
+            aaa: "AAAA INSERT"
+        };
+
+        let objectAsString = JSON.stringify(object);
+
+        console.log('Invoke Insert');
+
+        insert(type,objectAsString).then(function (results: any) {
+                console.log(`insert results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`insert REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+    const onPublish = () => {
+        let topic: string = "/a/b/c";
+        let object: any = {
+            ccc: "CCCC",
+            bbb: "BBBB",
+            aaa: "AAAA"
+        };
+
+        let objectAsString = JSON.stringify(object);
+
+        console.log('Invoke Publish');
+
+        publish(topic,objectAsString).then(function (results: any) {
+                console.log(`publish results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`publish REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+
+    const onUpsert = () => {
+        let type: string = "a.b.c.MyType";
+        let object: any = {
+            MyBoolean: false,
+            bbb: "NATKEY",
+            aaa: "AAAA UPDATE " + Math.random()
+        };
+
+        let objectAsString = JSON.stringify(object);
+
+        console.log('Invoke Upsert');
+
+        upsert(type,objectAsString).then(function (results: any) {
+                console.log(`upsert results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`upsert REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+
+    const onUpdate = () => {
+        let type: string = "a.b.c.MyType";
+        let object: any = {
+            MyBoolean: false,
+            ccc: "CCCC UPDATE " + Math.random()
+        };
+        let id:string = "6700304b033ebc6020bf1f2f";
+
+        let objectAsString = JSON.stringify(object);
+
+        console.log('Invoke Update1');
+
+        update(type,id,objectAsString).then(function (results: any) {
+                console.log(`update results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`update REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
     const onSelectOne = () => {
         let type: string = "a.b.c.MyType";
         let id:string = "66ff306d033ebc6020bf11ce";
@@ -115,6 +242,20 @@ export default function App() {
             },
             function (error: any) {
                 console.error(`select REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+    const onDeleteOne = () => {
+        let type: string = "a.b.c.MyType";
+        let id:string = "670416e4a7952f7630942965";
+
+        console.log('Invoke DeleteOne');
+
+        deleteOne(type, id).then(function (results: any) {
+                console.log(`deleteOne results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`deleteOne REJECT error=${JSON.stringify(error, null, 3)}`)
             })
     };
 
@@ -203,6 +344,50 @@ export default function App() {
                 title="Count"
                 color="#220022"
                 onPress={onCount}
+            />
+
+
+            <Button
+                title="Insert"
+                color="#338833"
+                onPress={onInsert}
+            />
+
+            <Button
+                title="Update"
+                color="#882288"
+                onPress={onUpdate}
+            />
+
+            <Button
+                title="Upsert"
+                color="#6622dd"
+                onPress={onUpsert}
+            />
+
+            <Button
+                title="Delete"
+                color="#6622dd"
+                onPress={onDelete}
+            />
+
+            <Button
+                title="Delete One"
+                color="#6622dd"
+                onPress={onDeleteOne}
+            />
+
+            <Button
+                title="Execute"
+                color="#2255dd"
+                onPress={onExecute}
+            />
+
+
+            <Button
+                title="Publish"
+                color="#3388aa"
+                onPress={onPublish}
             />
         </View>
     );

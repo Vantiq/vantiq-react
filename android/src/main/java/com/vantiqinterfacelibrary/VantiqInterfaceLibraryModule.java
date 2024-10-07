@@ -1,6 +1,7 @@
 package com.vantiqinterfacelibrary;
 
 import android.app.Activity;
+import android.os.AsyncTask;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -182,19 +183,102 @@ public class VantiqInterfaceLibraryModule extends ReactContextBaseJavaModule
     @ReactMethod
     public void select(String type, ReadableArray props, String where, String sort, double limit, Promise promise)
     {
-        this.db.select(type, props, where, sort, limit, promise);
+        new Thread(() -> {
+            VLog.i(TAG, "select: " + Thread.currentThread().getName());
+            db.select(type, props, where, sort, limit, promise);
+        }).start();
     }
 
     @ReactMethod
     public void selectOne(String type, String id, Promise promise)
     {
-        this.db.selectOne(type, id, promise);
+        new Thread(() -> {
+            VLog.i(TAG, "selectOne: " + Thread.currentThread().getName());
+            db.selectOne(type, id, promise);
+        }).start();
     }
 
     @ReactMethod
     public void count(String type, String where, Promise promise)
     {
-        this.db.count(type,  where, promise);
+        new Thread(() -> {
+            VLog.i(TAG, "count: " + Thread.currentThread().getName());
+            db.count(type, where, promise);
+        }).start();
     }
+
+    @ReactMethod
+    public void insert(String type, String object, Promise promise)
+    {
+        new Thread(() -> {
+            VLog.i(TAG, "insert: " + Thread.currentThread().getName());
+            db.insert(type, object, promise);
+        }).start();
+    }
+
+    @ReactMethod
+    public void update(String type, String id, String object, Promise promise)
+    {
+        new Thread(() -> {
+            VLog.i(TAG, "update: " + Thread.currentThread().getName());
+            db.update(type, id, object, promise);
+        }).start();
+    }
+
+    @ReactMethod
+    public void upsert(String type, String object, Promise promise)
+    {
+        new Thread(() -> {
+            VLog.i(TAG, "upsert: " + Thread.currentThread().getName());
+            db.upsert(type, object, promise);
+        }).start();
+    }
+
+    @ReactMethod
+    public void delete(String type, String where, Promise promise)
+    {
+        new Thread(() -> {
+            VLog.i(TAG, "delete: " + Thread.currentThread().getName());
+            db.delete(type, where, promise);
+        }).start();
+    }
+
+    @ReactMethod
+    public void deleteOne(String type, String id, Promise promise)
+    {
+        new Thread(() -> {
+            VLog.i(TAG, "deleteOne: " + Thread.currentThread().getName());
+            db.deleteOne(type, id, promise);
+        }).start();
+    }
+
+    @ReactMethod
+    public void execute(String procedureName, String params, Promise promise)
+    {
+        new Thread(() -> {
+            VLog.i(TAG, "execute: " + Thread.currentThread().getName());
+            db.execute(procedureName, params, promise);
+        }).start();
+    }
+
+
+    @ReactMethod
+    public void publish(String topic, String message, Promise promise)
+    {
+        new Thread(() -> {
+            VLog.i(TAG, "publish: " + Thread.currentThread().getName());
+            db.publish(topic, message, promise);
+        }).start();
+    }
+
+    @ReactMethod
+    public void publishEvent(String resource, String event, String resourceId, String message, Promise promise)
+    {
+        new Thread(() -> {
+            VLog.i(TAG, "publish: " + Thread.currentThread().getName());
+            db.publishEvent(resource, event, resourceId, message, promise);
+        }).start();
+    }
+
 }
 

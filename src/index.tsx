@@ -50,3 +50,32 @@ export function count(type: string, where: string): Promise<string> {
     return VantiqInterfaceLibrary.count(type, where);
 }
 
+export function insert(type: string, object: string): Promise<string> {
+    return VantiqInterfaceLibrary.insert(type, object);
+}
+
+export function update(type: string, id:string, object: string): Promise<string> {
+    return VantiqInterfaceLibrary.update(type, id, object);
+}
+
+export function upsert(type: string, object: string): Promise<string> {
+    return VantiqInterfaceLibrary.upsert(type, object);
+}
+
+
+export function deleteWhere(type: string, where: string): Promise<string> {
+    return VantiqInterfaceLibrary.delete(type, where);
+}
+
+
+export function deleteOne(type: string, id: string): Promise<string> {
+    return VantiqInterfaceLibrary.deleteOne(type, id);
+}
+
+export function execute(procedureName: string, params: string): Promise<string> {
+    return VantiqInterfaceLibrary.execute(procedureName, params);
+}
+
+export function publish(topic: string, object: string): Promise<string> {
+    return VantiqInterfaceLibrary.publish(topic, object);
+}
