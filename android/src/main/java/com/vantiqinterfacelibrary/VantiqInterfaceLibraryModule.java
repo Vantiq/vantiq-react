@@ -1,7 +1,6 @@
 package com.vantiqinterfacelibrary;
 
 import android.app.Activity;
-import android.os.AsyncTask;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
