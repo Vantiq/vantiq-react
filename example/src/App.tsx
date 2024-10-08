@@ -263,6 +263,8 @@ export default function App() {
 
         console.log('Invoke onValidate');
 
+        authenticationState.authValid = false;
+
         if (authenticationState.authValid) {
             console.log("Validation: current access token valid")
         }
@@ -289,7 +291,7 @@ export default function App() {
 
             } else if (authenticationState.serverType == "oauth") {
                 console.log("Validation: OAUTH");
-
+                // vantiqReact on staging
                 authWithOAuth("com.vantiq.mobile", "vantiqMobile").then(
                     function (newAuthState: any) {
                         authenticationState = newAuthState;

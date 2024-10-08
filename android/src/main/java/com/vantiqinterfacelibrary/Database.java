@@ -2,6 +2,7 @@ package com.vantiqinterfacelibrary;
 
 import android.os.Bundle;
 import android.os.Parcelable;
+import androidx.annotation.NonNull;
 import com.facebook.react.bridge.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -11,6 +12,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import com.vantiqinterfacelibrary.misc.VLog;
+import io.vantiq.androidlib.Utilities;
 import io.vantiq.androidlib.VantiqAndroidLibrary;
 import io.vantiq.androidlib.misc.Account;
 import io.vantiq.client.SortSpec;
@@ -21,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -35,7 +38,7 @@ public class Database
         vilm = _vilm;
     }
 
-    private void reject(String errorCode, String errorMsg, Promise promise)
+    public void reject(String errorCode, String errorMsg, Promise promise)
     {
         VLog.e(TAG, "REJECT: " + errorCode + " " + errorMsg);
         WritableMap map = Arguments.createMap();
@@ -144,8 +147,6 @@ public class Database
 
     public void selectOne(String type, String id, Promise promise)
     {
-        VLog.i(TAG, "selectOne");
-
         VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         Account a = val.account;
 
@@ -200,19 +201,10 @@ public class Database
         }
     }
 
+
+
     public void select(String type, ReadableArray props, String where, String sort, double limit, Promise promise)
     {
-        VLog.i(TAG, "select");
-
-        if (!validate())
-        {
-            VLog.i(TAG, "Access Token INVALID");
-        }
-        else
-        {
-            VLog.i(TAG, "Access Token Valid");
-        }
-
         VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         Account a = val.account;
 
@@ -343,8 +335,6 @@ public class Database
 
     public void count(String type, String where, Promise promise)
     {
-        VLog.i(TAG, "count");
-
         VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         Account a = val.account;
 
@@ -423,8 +413,6 @@ public class Database
 
     public void insert(String type, String object, Promise promise)
     {
-        VLog.i(TAG, "insert");
-
         VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         Account a = val.account;
 
@@ -502,8 +490,6 @@ public class Database
 
     public void update(String type, String id, String object, Promise promise)
     {
-        VLog.i(TAG, "update");
-
         VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         Account a = val.account;
 
@@ -581,8 +567,6 @@ public class Database
 
     public void upsert(String type, String object, Promise promise)
     {
-        VLog.i(TAG, "insert");
-
         VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         Account a = val.account;
 
@@ -660,8 +644,6 @@ public class Database
 
     public void deleteOne(String type, String id, Promise promise)
     {
-        VLog.i(TAG, "deleteOne");
-
         VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         Account a = val.account;
 
@@ -716,8 +698,6 @@ public class Database
 
     public void delete(String type, String where, Promise promise)
     {
-        VLog.i(TAG, "delete");
-
         VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         Account a = val.account;
 
@@ -793,8 +773,6 @@ public class Database
 
     public void execute(String procedureName, String params, Promise promise)
     {
-        VLog.i(TAG, "execute");
-
         VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         Account a = val.account;
 
@@ -912,8 +890,6 @@ public class Database
 
     public void publish(String topic, String message, Promise promise)
     {
-        VLog.i(TAG, "publish");
-
         VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         Account a = val.account;
 
@@ -989,8 +965,6 @@ public class Database
 
     public void publishEvent(String resource, String event, String resourceId, String message, Promise promise)
     {
-        VLog.i(TAG, "publishEvent");
-
         VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         Account a = val.account;
 
@@ -1066,41 +1040,5 @@ public class Database
         }
     }
 
-    public boolean validate()
-    {
-        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-        Account a = val.account;
-        String accessToken = a.getAccessToken();
-
-        if (accessToken != null)
-        {
-            Vantiq vantiqSDK = new Vantiq(a.getServer());
-            vantiqSDK.setAccessToken(accessToken);
-
-            ArrayList<String> props = new ArrayList();
-            props.add("username");
-
-            try
-            {
-                VantiqResponse vr = vantiqSDK.select("system.users", props,null, null);
-
-                if (vr.isSuccess())
-                {
-                    ArrayList ary = (ArrayList) vr.getBody();
-
-                    if (ary.size() == 1)
-                    {
-                        JsonObject jo = (JsonObject) ary.get(0);
-                        return (true);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-            }
-        }
-
-        return false;
-    }
 
 }
