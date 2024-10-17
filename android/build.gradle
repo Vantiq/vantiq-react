@@ -1,17 +1,27 @@
 buildscript {
   // Buildscript is evaluated before everything else so we can't use getExtOrDefault
-  def kotlin_version = rootProject.ext.has("kotlinVersion") ? rootProject.ext.get("kotlinVersion") : project.properties["VantiqReact_kotlinVersion"]
+  def kotlin_version = rootProject.ext.has("kotlinVersion") ? rootProject.ext.get("kotlinVersion") : project.properties["VantiqInterfaceLibrary_kotlinVersion"]
 
   repositories {
     google()
     mavenCentral()
+    mavenLocal()
   }
 
   dependencies {
-    classpath "com.android.tools.build:gradle:7.2.1"
+    classpath "com.android.tools.build:gradle:8.0.1"
     // noinspection DifferentKotlinGradleVersion
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
   }
+}
+
+plugins {
+  id 'maven-publish'
+}
+
+repositories {
+  mavenCentral()
+  mavenLocal()
 }
 
 def reactNativeArchitectures() {
@@ -23,6 +33,7 @@ def isNewArchitectureEnabled() {
   return rootProject.hasProperty("newArchEnabled") && rootProject.getProperty("newArchEnabled") == "true"
 }
 
+
 apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
 
@@ -31,11 +42,11 @@ if (isNewArchitectureEnabled()) {
 }
 
 def getExtOrDefault(name) {
-  return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties["VantiqReact_" + name]
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties["VantiqInterfaceLibrary_" + name]
 }
 
 def getExtOrIntegerDefault(name) {
-  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["VantiqReact_" + name]).toInteger()
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["VantiqInterfaceLibrary_" + name]).toInteger()
 }
 
 def supportsNamespace() {
@@ -49,7 +60,7 @@ def supportsNamespace() {
 
 android {
   if (supportsNamespace()) {
-    namespace "com.vantiqreact"
+    namespace "com.vantiqinterfacelibrary"
 
     sourceSets {
       main {
@@ -63,7 +74,7 @@ android {
   defaultConfig {
     minSdkVersion getExtOrIntegerDefault("minSdkVersion")
     targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
-
+    manifestPlaceholders = [appAuthRedirectScheme:"xxx.vantiq.mobile"] // Not used, but has to be here to prevent compile errors
   }
 
   buildTypes {
@@ -77,23 +88,61 @@ android {
   }
 
   compileOptions {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
   }
 }
 
 repositories {
   mavenCentral()
   google()
+  mavenLocal()
 }
 
 def kotlin_version = getExtOrDefault("kotlinVersion")
 
+
+project.afterEvaluate {
+  publishing {
+    publications {
+      libraryProject(MavenPublication) {
+        setGroupId 'io.vantiq.vantiqinterfacelibrary'
+        setArtifactId 'networking-release'
+        version '1.0'
+        artifact bundleReleaseAar
+      }
+    }
+  }
+}
+
 dependencies {
-  // For < 0.71, this will be from the local maven repo
-  // For > 0.71, this will be replaced by `com.facebook.react:react-android:$version` by react gradle plugin
-  //noinspection GradleDynamicVersion
-  implementation "com.facebook.react:react-native:+"
+  //
+  //   This matches the "example" app
+  //
+  implementation 'com.facebook.react:react-android:0.75.3'
+
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+
+  implementation 'androidx.appcompat:appcompat:1.6.1'
+  implementation 'com.google.android.material:material:1.10.0'
+  implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+  implementation 'androidx.navigation:navigation-fragment:2.6.0'
+  implementation 'androidx.navigation:navigation-ui:2.6.0'
+  implementation 'androidx.activity:activity:1.8.0'
+
+  implementation 'net.openid:appauth:0.11.1'
+
+  implementation 'io.vantiq:vantiq-sdk:1.2.2'
+
+  implementation 'joda-time:joda-time:2.8.2'
+
+  implementation 'com.auth0.android:jwtdecode:+'
+
+  //implementation files("/Users/steve/dev/RN/VantiqAndroidLibrary/lib/build/outputs/aar/lib-debug.aar")
+
+  //
+  //  The Vantiq Android Library - for now this is just in maven local
+  //
+  implementation 'io.vantiq.androidlibrary:lib:1.0'
 }
 

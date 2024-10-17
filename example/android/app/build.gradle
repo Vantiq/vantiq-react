@@ -72,6 +72,12 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'org.webkit:android-jsc:+'
 
+repositories {
+    mavenCentral()
+    google()
+    mavenLocal()
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -84,6 +90,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        manifestPlaceholders = [appAuthRedirectScheme:"vantiqreact"] // Not used, but has to be here to prevent compile errors
     }
     signingConfigs {
         debug {
@@ -116,4 +123,6 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    implementation 'io.vantiq.androidlibrary:lib:1.0'
 }
