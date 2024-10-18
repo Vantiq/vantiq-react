@@ -15,6 +15,7 @@ if linkage != nil
 end
 
 target 'VantiqReactExample' do
+  pod 'vantiq-ui-ios', :inhibit_warnings => true
   config = use_native_modules!
 
   use_react_native!(
