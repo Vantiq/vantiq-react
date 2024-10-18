@@ -130,6 +130,7 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
                     map.putString("errorStr", a.getErrorMessage());
                     map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
                     map.putInt("httpStatus", 0);
+                    map.putString("errorMsg", Error.VALIDATIONFAILED);
                     promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
                 }
             }
@@ -169,6 +170,7 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
                     map.putString("errorStr", a.getErrorMessage());
                     map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
                     map.putInt("httpStatus", 0);
+                    map.putString("errorMsg", Error.VALIDATIONFAILED);
                     promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
                 }
             }
@@ -209,6 +211,7 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
                     map.putString("errorStr", a.getErrorMessage());
                     map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
                     map.putInt("httpStatus", 0);
+                    map.putString("errorMsg", Error.VALIDATIONFAILED);
                     promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
                 }
             }
@@ -249,6 +252,7 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
                     map.putString("errorStr", a.getErrorMessage());
                     map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
                     map.putInt("httpStatus", 0);
+                    map.putString("errorMsg", Error.VALIDATIONFAILED);
                     promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
                 }
             }
@@ -271,7 +275,14 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
             if (a.getAccessToken() == null)
             {
                 VLog.e(TAG, "No Access Token");
-                db.reject(name, Error.veNotAuthorized, a.getErrorMessage(),promise);
+                String errorMsg = a.getErrorMessage();
+
+                if (errorMsg == null)
+                {
+                    errorMsg = Error.VALIDATIONFAILED;
+                }
+
+                db.reject(name, Error.veNotAuthorized, errorMsg,promise);
                 return;
             }
 
