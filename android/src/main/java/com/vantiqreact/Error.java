@@ -57,4 +57,6 @@ public class Error
      *
      */
     public static final String veJsonParseError = "com.vantiq.JsonParseError";
+
+    public static final String VALIDATIONFAILED = "No Access Token Available";
 }
