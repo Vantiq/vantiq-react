@@ -13,6 +13,7 @@ import io.vantiq.client.VantiqResponse;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class Database
 {
@@ -43,7 +44,29 @@ public class Database
             this.rejectParse(op,propertyName,ex,promise);
         }
 
+
         return jo;
+    }
+
+    private JsonArray convertToArray(String op, String propertyName, ReadableArray ra,Promise promise)
+    {
+        String raAsString = ra.toString();
+        JsonArray ja = null;
+
+        //
+        //  This should never actually fail because what we are parsing is the output of the "toString" above,
+        //  and that should always be valid JSON. Handle that just in case.
+        //
+        try
+        {
+            ja = new JsonParser().parse(raAsString).getAsJsonArray();
+        }
+        catch (Exception ex)
+        {
+            this.rejectParse(op,propertyName,ex,promise);
+        }
+
+        return ja;
     }
 
     public void reject(String op, String errorCode, String errorMsg, Promise promise)
@@ -753,7 +776,27 @@ public class Database
         }
     }
 
-    public void execute(String procedureName, ReadableMap params, Promise promise)
+    public void executeByPosition(String procedureName, ReadableArray paramsArray, Promise promise)
+    {
+        //
+        //  Turn the "params" parameter into a JsonArray
+        //
+        JsonArray paramsAsArray =  this.convertToArray("executeByPosition", "params", paramsArray, promise);
+
+        this.execute(procedureName, paramsAsArray, promise);
+    }
+
+    public void executeByName(String procedureName, ReadableMap paramsMap, Promise promise)
+    {
+        //
+        //  Turn the "params" parameter into a JsonObject
+        //;
+        JsonObject paramsAsObject = this.convertToObject("executeByName","params",paramsMap,promise);
+
+        this.execute(procedureName, paramsAsObject, promise);
+    }
+
+    private void execute(String procedureName, Object paramsAsObject, Promise promise)
     {
         VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         Account a = val.account;
@@ -761,21 +804,6 @@ public class Database
         Vantiq vantiqSDK = new Vantiq(a.getServer());
         vantiqSDK.setAccessToken(a.getAccessToken());
         vantiqSDK.setUsername(a.getUsername());
-
-        JsonObject paramsAsObject = null;
-
-        //
-        //  Turn the "params" parameter into a JsonObject
-        //
-        if (params != null)
-        {
-            paramsAsObject = this.convertToObject("execute","params",params,promise);
-
-            if (paramsAsObject == null)
-            {
-                return;
-            }
-        }
 
         VantiqResponse vr = null;
         Exception theException = null;

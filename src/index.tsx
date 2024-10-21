@@ -79,8 +79,12 @@ export function deleteOne(type: string, id: string): Promise<string> {
     return VantiqReact.deleteOne(type, id);
 }
 
-export function execute(procedureName: string, params: any): Promise<string> {
-    return VantiqReact.execute(procedureName, params);
+export function executeByPosition(procedureName: string, params: any[]): Promise<string> {
+    return VantiqReact.executeByPosition(procedureName, params);
+}
+
+export function executeByName(procedureName: string, params: any): Promise<string> {
+    return VantiqReact.executeByName(procedureName, params);
 }
 
 export function publish(topic: string, object: any): Promise<string> {

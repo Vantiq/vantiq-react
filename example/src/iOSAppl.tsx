@@ -6,7 +6,9 @@ const {VantiqReact} = NativeModules;
 var transcriptText = "";
 var doInit = true;
 var VANTIQ_SERVER = 'https://staging.vantiq.com';
-var VANTIQ_NAMESPACE = 'swan'
+var VANTIQ_NAMESPACE = 'MySandbox'
+
+VANTIQ_SERVER = 'http://10.0.0.208:8080';
 
 export default function Index() {
     const [transcript, setTranscript] = useState(transcriptText);
@@ -23,16 +25,20 @@ export default function Index() {
             doInit = false;
             VantiqReact.init(VANTIQ_SERVER, VANTIQ_NAMESPACE).then(
              function(response) {
-                 if (response.authValid == "true") {
+             console.log(JSON.stringify(response,null,3));
+                 if (response.authValid == true) {
                      runTests();
                  } else {
                      // authentication error so need to authenticate
                      if (response.serverType == "Internal") {
+
                          setAuthVisible(true);
                      } else if (response.serverType == "OAuth") {
                          VantiqReact.authWithOAuth('vantiqreact', 'vantiqReact').then(
                             function(response) {
-                               if (response.authValid == "true") {
+                            console.log(JSON.stringify(response,null,3));
+                            
+                               if (response.authValid == true) {
                                    runTests();
                                } else {
                                    addToTranscript('Authentication error: ' + response.errorStr);
@@ -62,7 +68,7 @@ export default function Index() {
         setAuthVisible(false);
         VantiqReact.authWithInternal(internalUsername, internalPassword).then(
             function(response) {
-               if (response.authValid == "true") {
+               if (response.authValid == true) {
                    runTests();
                } else {
                    addToTranscript('Authentication error: ' + response.errorStr);
@@ -97,7 +103,7 @@ export default function Index() {
                  });
         }, 2000);
         setTimeout(function() {
-            VantiqReact.insert('TestType', {"intValue":42,"uniqueString":"42"}).then(
+            VantiqReact.insert('TestType', {"intValue":42,"uniqueString":"42",boolValue:true}).then(
                 function(data) {
                     data = data ? data : {};
                     lastVantiqID = (data._id).toString();
@@ -148,7 +154,7 @@ export default function Index() {
                 });
         }, 14000);
         setTimeout(function() {
-            VantiqReact.execute('sumTwo', [35, 21]).then(
+            VantiqReact.executeByName('sumTwo', {val1:10,val2:20}).then(
                 function(data) {
                     addToTranscript('Execute successful: ' + JSON.stringify(data));
                 }, function(error) {

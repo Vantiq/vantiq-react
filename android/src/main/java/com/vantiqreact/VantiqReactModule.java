@@ -473,6 +473,7 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
         });
     }
 
+    /*
     @ReactMethod
     public void execute(String procedureName, ReadableMap params, Promise promise)
     {
@@ -481,7 +482,33 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
             @Override
             public void onReadyToRun()
             {
-                db.execute(procedureName, params, promise);
+                db.execute(procedureName, params, null, promise);
+            }
+        });
+    }
+    */
+
+    @ReactMethod
+    public void executeByPosition(String procedureName, ReadableArray params, Promise promise)
+    {
+        this.runServerOperation("execute", promise, new OnReadyToRunListener()
+        {
+            @Override
+            public void onReadyToRun()
+            {
+                db.executeByPosition(procedureName, params, promise);
+            }
+        });
+    }
+    @ReactMethod
+    public void executeByName(String procedureName, ReadableMap params, Promise promise)
+    {
+        this.runServerOperation("execute", promise, new OnReadyToRunListener()
+        {
+            @Override
+            public void onReadyToRun()
+            {
+                db.executeByName(procedureName, params, promise);
             }
         });
     }
