@@ -1,9 +1,9 @@
-import React, {useEffect, useState} from 'react'
+import {useEffect, useState} from 'react'
 import { NativeModules, StyleSheet, Pressable, Text, View, TextInput, ScrollView, Button } from "react-native";
 import { RootSiblingParent } from 'react-native-root-siblings';
 
 import {init, authWithInternal, authWithOAuth, select, selectOne, count,
-  insert, update, upsert, deleteOne, deleteWhere, execute, publishEvent, verifyAuthToken} from 'vantiq-react';
+  insert, update, upsert, deleteOne, deleteWhere, executeByName, executeByPosition, publish, publishEvent, verifyAuthToken} from 'vantiq-react';
 
 const {VantiqReact} = NativeModules;
 const VANTIQ_SERVER:string = 'https://staging.vantiq.com';
@@ -26,8 +26,8 @@ export default function Index() {
     const [internalPassword, setInternalPassword] = useState('');
     
     useEffect(() => {
-        VantiqReact.init(VANTIQ_SERVER, VANTIQ_NAMESPACE).then(
-          function(response) {
+        init(VANTIQ_SERVER, VANTIQ_NAMESPACE).then(
+          function(response:any) {
              authenticationState = response;
              if (response.authValid) {
                  setStartVisible(true);
@@ -37,21 +37,21 @@ export default function Index() {
                      setAuthVisible(true);
                  } else if (response.serverType == VantiqOAuth) {
                      VantiqReact.authWithOAuth(OAUthUrlScheme, OAuthClientId).then(
-                        function(response) {
+                        function(response:any) {
                            if (response.authValid) {
                                setStartVisible(true);
                            } else {
                                addToTranscript('Authentication error: ' + response.errorStr);
                            }
-                        }, function(error) {
-                           addToTranscript('Authentication error: ' + response.errorStr);
+                        }, function(error:any) {
+                           addToTranscript('Authentication error: ' + error.errorStr);
                         });
                  } else {
                      addToTranscript('Invalid server type');
                  }
              }
-           }, function(error) {
-             addToTranscript('init fail: ' + response.errorStr);
+           }, function(error:any) {
+             addToTranscript('init fail: ' + error.errorStr);
            });
     }, []);
 
@@ -62,7 +62,7 @@ export default function Index() {
     }
     
     // user presses one of the Test Mode buttons
-    function onModePress(mode) {
+    function onModePress(mode:any) {
         setUIType(mode);
     }
     
@@ -71,149 +71,149 @@ export default function Index() {
     function onLoginPress() {
         setAuthVisible(false);
         VantiqReact.authWithInternal(internalUsername, internalPassword).then(
-            function(response) {
+            function(response:any) {
                if (response.authValid) {
                    runTests();
                } else {
                    addToTranscript('Authentication error: ' + response.errorStr);
                    setAuthVisible(true);
                }
-            }, function(error) {
+            }, function(error:any) {
                 setAuthVisible(true);
                 addToTranscript('Authentication error: ' + error.message + ", code: " + error.code);
             });
     }
     
     // helper to add text to the suite transcript
-    addToTranscript = function(text) {
+    const addToTranscript = (text:string) => {
         transcriptText += text + '\n';
         setTranscript(transcriptText);
     }
     
     // helper to add any error string and code to the transcript
-    reportTestError = function(op, error) {
+    const reportTestError = (op:string, error:any) => {
         addToTranscript(op + ' error: ' + error.message + ", code: " + error.code);
     }
     
     // test harness for running in suite mode
     let lastVantiqID:string;
-    runTests = function() {
+    const runTests = () => {
         setRunningSuite(true);
         VantiqReact.select('system.types', [], null, {}, -1).then(
-            function(data) {
+            function(data:any) {
                 let length:number = data ? data.length : "N/A";
                 addToTranscript('Select returns ' + length + ' items.');
-            }, function(error) {
+            }, function(error:any) {
                 reportTestError('Select', error);
             });
         setTimeout(function() {
             VantiqReact.count('system.types', {"ars_version":{"$gt":5}}).then(
-                 function(count) {
+                 function(count:any) {
                      addToTranscript('Count returns ' + count + ' items.');
-                 }, function(error) {
+                 }, function(error:any) {
                      reportTestError('Count', error);
                  });
         }, 2000);
         setTimeout(function() {
             VantiqReact.insert('TestType', {"intValue":42,"uniqueString":"42", boolValue:true}).then(
-                function(data) {
+                function(data:any) {
                     data = data ? data : {};
                     lastVantiqID = (data._id).toString();
                     addToTranscript('Insert successful, id: ' + lastVantiqID + '.');
-                }, function(error) {
+                }, function(error:any) {
                     reportTestError('Insert', error);
                 });
         }, 4000);
         setTimeout(function() {
             VantiqReact.upsert('TestType', {"intValue":44,"uniqueString":"A Unique String."}).then(
-                function(data) {
+                function(_data:any) {
                     addToTranscript('Upsert successful.');
-                }, function(error) {
+                }, function(error:any) {
                     reportTestError('Upsert', error);
                 });
         }, 6000);
         setTimeout(function() {
             VantiqReact.upsert('TestType', {"intValue":45,"uniqueString":"A Unique String."}).then(
-                function(data) {
+                function(_data:any) {
                     addToTranscript('Upsert successful.');
-                }, function(error) {
+                }, function(error:any) {
                     reportTestError('Upsert', error);
                 });
         }, 8000);
         setTimeout(function() {
             VantiqReact.update('TestType', lastVantiqID, {"stringValue":"Updated String."}).then(
-                function(data) {
+                function(_data:any) {
                     addToTranscript('Update successful.');
-                }, function(error) {
+                }, function(error:any) {
                     reportTestError('Update', error);
                 });
         }, 10000);
         setTimeout(function() {
             VantiqReact.selectOne('TestType', lastVantiqID).then(
-                function(data) {
+                function(data:any) {
                     data = data ? data : [];
                     addToTranscript('SelectOne successful: ' + data.length + ' records.');
-                }, function(error) {
+                }, function(error:any) {
                     reportTestError('SelectOne', error);
                 });
         }, 12000);
         setTimeout(function() {
             VantiqReact.publish('/vantiq', {"intValue":42}).then(
-                function(data) {
+                function(_data:any) {
                     addToTranscript('Publish successful.');
-                }, function(error) {
+                }, function(error:any) {
                     reportTestError('Publish', error);
                 });
         }, 14000);
         setTimeout(function() {
             VantiqReact.executeByName('sumTwo', {"val1":35, "val2":21}).then(
-                function(data) {
+                function(data:any) {
                     addToTranscript('ExecuteByName successful: ' + JSON.stringify(data));
-                }, function(error) {
+                }, function(error:any) {
                     reportTestError('ExecuteByName', error);
                 });
         }, 16000);
         setTimeout(function() {
             VantiqReact.executeByPosition('sumTwo', [35, 21]).then(
-                function(data) {
+                function(data:any) {
                     addToTranscript('ExecuteByPosition successful: ' + JSON.stringify(data));
-                }, function(error) {
+                }, function(error:any) {
                     reportTestError('ExecuteByPosition', error);
                 });
         }, 18000);
         setTimeout(function() {
             VantiqReact.deleteOne('TestType', lastVantiqID).then(
-                function(data) {
+                function(_data:any) {
                     addToTranscript('DeleteOne successful.');
-                }, function(error) {
+                }, function(error:any) {
                     reportTestError('DeleteOne', error);
                 });
         }, 20000);
         setTimeout(function() {
             VantiqReact.delete('TestType', {"intValue":42}).then(
-                function(data) {
+                function(_data:any) {
                     addToTranscript('Delete successful.');
-                }, function(error) {
+                }, function(error:any) {
                     reportTestError('Delete', error);
                 });
         }, 22000);
         setTimeout(function() {
             VantiqReact.select('system.types', ["name", "_id"], {}, {"name":-1}, -1).then(
-                function(data) {
+                function(data:any) {
                     let length:number = data ? data.length : "N/A";
                     addToTranscript('Select returns ' + length + ' items.');
-                }, function(error) {
+                }, function(error:any) {
                     reportTestError('Select', error);
                 });
         }, 24000);
         setTimeout(function() {
             VantiqReact.delete('TestType', {"intValue":42}).then(
-                function(data) {
+                function(_data:any) {
                     addToTranscript('Delete successful.');
                     addToTranscript('Tests complete.');
                     setStartVisible(true);
                     setRunningSuite(false);
-                }, function(error) {
+                }, function(error:any) {
                     reportTestError('Delete', error);
                     addToTranscript('Tests complete.');
                     setStartVisible(true);
@@ -221,257 +221,377 @@ export default function Index() {
                 });
         }, 26000);
     }
-    
-    // methods for running in single mode
-    const onValidate = () => {
 
-      console.log('Invoke onValidate');
+    const onSelect = () => {
+        let type: string = "a.b.c.MyType";
+        let props: string[] = ["aaa", "bbb", "ccc", "qqqq", "MyBoolean", "MyObject", "stringAry"];
+        let where: any = {
+            ccc: "c"
+        };
+        let sortSpec: any = {
+            bbb: 1
+        };
+        let limit: number = 100;
 
-      authenticationState.authValid = false;
+        where = null;
+        sortSpec = null;
 
-      if (authenticationState.authValid) {
-        console.log("Validation: current access token valid")
-      }
-          //
-          //  Either (1) there was no current token, (2) the current token is not valid, (3) the server/namespace changed
-      //
-      else {
-        if (authenticationState.serverType == "Internal") {
-          let username: string = internalUsername;
-          let password: string = internalPassword;
+        console.log('Invoke Select');
 
-          console.log("Validation: INTERNAL")
-
-          authWithInternal(username, password).then(
-              function (newAuthState: any) {
-                authenticationState = newAuthState;
-                let auth: string = JSON.stringify(authenticationState, null, 3)
-                console.log(`Validation: authValid=${authenticationState.authValid} authState=${auth}`);
-              },
-              function (error: any) {
-                console.error(`Validation INTERNAL REJECT error=${JSON.stringify(error)}`)
-              }
-          );
-
-        } else if (authenticationState.serverType == VantiqOAuth) {
-          console.log("Validation: OAUTH");
-          // vantiqReact on staging
-          authWithOAuth(OAUthUrlScheme, OAuthClientId).then(
-              function (newAuthState: any) {
-                authenticationState = newAuthState;
-                let auth: string = JSON.stringify(authenticationState, null, 3)
-                console.log(`Validation: authValid=${authenticationState.authValid} authState=${auth}`);
-              },
-              function (error: any) {
-                console.error(`Validation OAUTH REJECT error=${JSON.stringify(error)}`);
-              }
-          );
-        } else {
-          console.error(`Validation FAIL: serverType invalid=${authenticationState.serverType}`);
-        }
-      }
-    }
-    const onRefresh = () => {
-
-      console.log('Invoke onRefresh');
-
-      authenticationState.authValid = false;
-
-      if (authenticationState.serverType == VantiqInternal)
-      {
-        console.error(`Can't Refresh Internal`);
-
-      }
-      else if (authenticationState.serverType == VantiqOAuth)
-      {
-        console.log("Refesh: OAUTH");
-        // vantiqReact on staging
-        verifyAuthToken().then(
-            function (newAuthState: any) {
-              authenticationState = newAuthState;
-              let auth: string = JSON.stringify(authenticationState, null, 3)
-              console.log(`Validation: authValid=${authenticationState.authValid} authState=${auth}`);
+        select(type, props, where, sortSpec, limit).then(function (results: any) {
+                console.log(`select results=${JSON.stringify(results, null, 3)}`)
             },
             function (error: any) {
-              console.error(`Validation OAUTH REJECT error=${JSON.stringify(error)}`);
-            }
-        );
-      }
+                console.error(`select REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
 
-    }
-    const onSelect = () => {
-      let type: string = "a.b.c.MyType";
-      let props: string[] = ["aaa", "bbb", "ccc", "qqqq", "MyBoolean", "MyObject", "stringAry"];
-      let where: any = {
-        ccc:"c"
-      };
-      let sortSpec: any = {
-        bbb:1
-      };
-      let limit: number = 100;
 
-      where = {};
-      sortSpec = {};
+    const onExecuteByName = () => {
+        let procedureName: string = "TestProc";
+        console.log('Invoke Execute By Name');
 
-      console.log('Invoke Select');
+        let params: any = {
+            aaa: 4,
+            bbb: 6
+        };
 
-      select(type, props, where, sortSpec, limit).then(function (results: any) {
-            console.log(`select results=${JSON.stringify(results, null, 3)}`)
-          },
-          function (error: any) {
-            console.error(`select REJECT error=${JSON.stringify(error, null, 3)}`)
-          })
-    }
-    const onSelectOne = () => {
-      let type: string = "a.b.c.MyType";
-      let id:string = "66ff306d033ebc6020bf11ce";
+        executeByName(procedureName, params).then(function (results: any) {
+                console.log(`execute results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`execute REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
 
-      console.log('Invoke SelectOne');
+    const onExecuteByPosition = () => {
+        let procedureName: string = "TestProc";
+        console.log('Invoke Execute By Position');
 
-      selectOne(type, id).then(function (results: any) {
-            console.log(`select results=${JSON.stringify(results, null, 3)}`)
-          },
-          function (error: any) {
-            console.error(`select REJECT error=${JSON.stringify(error, null, 3)}`)
-          })
-    }
-    const onCount = () => {
-      let type: string = "a.b.c.MyType";
-      let where: any = {
-        ccc:"c"
-      };
+        let params: any = [15, 7];
+        executeByPosition(procedureName, params).then(function (results: any) {
+                console.log(`execute results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`execute REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
 
-      where = null;
 
-      console.log('Invoke Count');
-
-      count(type,where).then(function (results: any) {
-            console.log(`select results=${JSON.stringify(results, null, 3)}`)
-          },
-          function (error: any) {
-            console.error(`select REJECT error=${JSON.stringify(error, null, 3)}`)
-          })
-    }
-    const onInsert = () => {
-      let type: string = "a.b.c.MyType";
-      let object: any = {
-        MyBoolean: false,
-        ccc: "CCCC INSERT",
-        bbb: "BBB INSERT " + Math.random(),
-        aaa: "AAAA INSERT"
-      };
-
-      console.log('Invoke Insert');
-
-      insert(type,object).then(function (results: any) {
-            console.log(`insert results=${JSON.stringify(results, null, 3)}`)
-          },
-          function (error: any) {
-            console.error(`insert REJECT error=${JSON.stringify(error, null, 3)}`)
-          })
-    }
-    const onPublish = () => {
-      let resourceId: string = "a.b.c.MyService/VEH";
-      let resource:string = "services";
-      let object: any = {
-        ccc: "CCCC",
-        bbb: "BBBB",
-        aaa: "AAAA"
-      };
-
-      console.log('Invoke Publish');
-
-      publishEvent(resource,resourceId,object).then(function (results: any) {
-            console.log(`publishEvent results=${JSON.stringify(results, null, 3)}`)
-          },
-          function (error: any) {
-            console.error(`publishEvent REJECT error=${JSON.stringify(error, null, 3)}`)
-          })
-    }
-    const onUpsert = () => {
-      let type: string = "a.b.c.MyType";
-      let object: any = {
-        MyBoolean: false,
-        bbb: "NATKEY",
-        aaa: "AAAA UPDATE " + Math.random()
-      };
-
-      console.log('Invoke Upsert');
-
-      upsert(type,object).then(function (results: any) {
-            console.log(`upsert results=${JSON.stringify(results, null, 3)}`)
-          },
-          function (error: any) {
-            console.error(`upsert REJECT error=${JSON.stringify(error, null, 3)}`)
-          })
-    }
-    const onUpdate = () => {
-      let type: string = "a.b.c.MyType";
-      let object: any = {
-        MyBoolean: false,
-        ccc: "CCCC UPDATE " + Math.random()
-      };
-      let id:string = "6700304b033ebc6020bf1f2f";
-
-      console.log('Invoke Update1');
-
-      update(type,id,object).then(function (results: any) {
-            console.log(`update results=${JSON.stringify(results, null, 3)}`)
-          },
-          function (error: any) {
-            console.error(`update REJECT error=${JSON.stringify(error, null, 3)}`)
-          })
-    }
     const onDelete = () => {
-      let type: string = "a.b.c.MyType";
-      // @ts-ignore
-      let where: string = {
-        bbb: "b2"
-      };
+        let type: string = "a.b.c.MyType";
+        let object: any = {
+            MyBoolean: false,
+            ccc: "CCC DELETE WHERE",
+            bbb: "BBB DELETE WHERE " + Math.random(),
+            aaa: "AAA DELETE WHERE"
+        };
 
-      console.log('Invoke Select');
+        console.log('Invoke Insert to delete-where a record');
 
-      deleteWhere(type,  where).then(function (results: any) {
-            console.log(`delete results=${JSON.stringify(results, null, 3)}`)
-          },
-          function (error: any) {
-            console.error(`delete REJECT error=${JSON.stringify(error, null, 3)}`)
-          })
-    }
+        insert(type, object).then(function (results: any)
+            {
+                console.log(`insert results=${JSON.stringify(results, null, 3)}`);
+                console.log('Invoke DeleteWhere to delete record');
+
+                let where: any = {
+                    ccc: "CCC DELETE WHERE"
+                };
+
+                console.log('Invoke Select');
+
+                deleteWhere(type, where).then(function (results: any) {
+                        console.log(`delete results=${JSON.stringify(results, null, 3)}`)
+                    },
+                    function (error: any) {
+                        console.error(`delete REJECT error=${JSON.stringify(error, null, 3)}`)
+                    })
+            },
+            function (error: any) {
+                console.error(`insert REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+    const onCount = () => {
+        let type: string = "a.b.c.MyType";
+        let where: any = {
+            ccc: "c"
+        };
+
+        where = null;
+
+        console.log('Invoke Count');
+
+        count(type, where).then(function (results: any) {
+                console.log(`select results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`select REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+    const onInsert = () => {
+        let type: string = "a.b.c.MyType";
+        let object: any = {
+            MyBoolean: false,
+            ccc: "CCCC INSERT",
+            bbb: "BBB INSERT " + Math.random(),
+            aaa: "AAAA INSERT"
+        };
+
+        console.log('Invoke Insert');
+
+        insert(type, object).then(function (results: any) {
+                console.log(`insert results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`insert REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+    const onPublish = () => {
+        let topic: string = "/aaa/bbb/ccc";
+        let object: any = {
+            ccc: "CCCC",
+            bbb: "BBBB",
+            aaa: "AAAA"
+        };
+
+        console.log('Invoke Publish');
+
+        publish(topic, object).then(function (results: any) {
+                console.log(`publish results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`publish REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+    const onPublishEvent = () => {
+        let resourceId: string = "a.b.c.MyService/VEH";
+        let resource: string = "services";
+        let object: any = {
+            ccc: "CCCC",
+            bbb: "BBBB",
+            aaa: "AAAA"
+        };
+
+        console.log('Invoke Publish Event');
+
+        publishEvent(resource, resourceId, object).then(function (results: any) {
+                console.log(`publishEvent results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`publishEvent REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+    const onUpsert = () => {
+        let type: string = "a.b.c.MyType";
+        let object: any = {
+            MyBoolean: false,
+            bbb: "NATKEY",
+            aaa: "AAAA UPSERT " + Math.random()
+        };
+
+        console.log('Invoke Upsert');
+
+        upsert(type, object).then(function (results: any) {
+                console.log(`upsert results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`upsert REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+
+    const onUpdate = () => {
+        let type: string = "a.b.c.MyType";
+        let object: any = {
+            MyBoolean: false,
+            ccc: "CCC INSERTED TO TEST UPDATE",
+            bbb: "BBB INSERTED TO TEST UPDATE " + Math.random(),
+            aaa: "AAA INSERTED TO TEST UPDATE"
+        };
+
+        console.log('Invoke Insert to add a record');
+
+        insert(type, object).then(function (results: any)
+            {
+                console.log(`insert results=${JSON.stringify(results, null, 3)}`);
+
+                object = results;
+                let id: string = object._id;
+                object.ccc = object.ccc += " - UPDATED";
+                delete object._id;
+
+                console.log('Invoke Update to update record ' + id);
+
+                update(type, id, object).then(function (results: any) {
+                        console.log(`update results=${JSON.stringify(results, null, 3)}`)
+                    },
+                    function (error: any) {
+                        console.error(`update REJECT error=${JSON.stringify(error, null, 3)}`)
+                    })
+            },
+            function (error: any) {
+                console.error(`insert REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+    const onSelectOne = () => {
+        let type: string = "a.b.c.MyType";
+        // @ts-ignore
+        let props: string[] = null;
+        let where: any = {
+            bbb: "b"
+        };
+        let sortSpec: any = null;
+        let limit: number = 100;
+
+        console.log("Invoke Select for object with 'bbb'='b'");
+
+        select(type, props, where, sortSpec, limit).then(function (results: any)
+            {
+                console.log(`select results=${JSON.stringify(results, null, 3)}`)
+
+                if (results.length == 1)
+                {
+                    let id:string = results[0]._id;
+                    console.log('Invoke SelectOne with id=' + id);
+
+                    selectOne(type, id).then(function (results: any) {
+                            let resultObj:any = null;
+                            if (results && (results.length == 1))
+                            {
+                                resultObj = results[0];
+                            }
+                            console.log(`selectOne results=${JSON.stringify(resultObj, null, 3)}`)
+                        },
+                        function (error: any) {
+                            console.error(`selectOne REJECT error=${JSON.stringify(error, null, 3)}`)
+                        })
+                }
+                else
+                {
+                    console.log(`Expected record was missing`);
+                }
+
+            },
+            function (error: any) {
+                console.error(`select REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
     const onDeleteOne = () => {
-      let type: string = "a.b.c.MyType";
-      let id:string = "670416e4a7952f7630942965";
+        let type: string = "a.b.c.MyType";
+        let object: any = {
+            MyBoolean: false,
+            ccc: "CCC DELETE ONE",
+            bbb: "BBB DELETE ONE " + Math.random(),
+            aaa: "AAA DELETE ONE"
+        };
 
-      console.log('Invoke DeleteOne');
+        console.log('Invoke Insert to add a record');
 
-      deleteOne(type, id).then(function (results: any) {
-            console.log(`deleteOne results=${JSON.stringify(results, null, 3)}`)
-          },
-          function (error: any) {
-            console.error(`deleteOne REJECT error=${JSON.stringify(error, null, 3)}`)
-          })
-    }
-    const onExecute = () => {
-      let procedureName: string = "TestProc";
-      let params: any = {
-        aaa: 4,
-        bbb: 6
-      };
-        params = [6, 4];
+        insert(type, object).then(function (results: any)
+            {
+                console.log(`insert results=${JSON.stringify(results, null, 3)}`);
 
-      console.log('Invoke Execute');
+                let id: string = results._id;
 
-      //procedureName = "NoParms";
-      //paramsAsString = null;
+                console.log('Invoke DeleteOne to delete record ' + id);
 
-      execute(procedureName,  params).then(function (results: any) {
-            console.log(`execute results=${JSON.stringify(results, null, 3)}`)
-          },
-          function (error: any) {
-            console.error(`execute REJECT error=${JSON.stringify(error, null, 3)}`)
-          })
-    }
-    
+                deleteOne(type, id).then(function (results: any) {
+                        console.log(`deleteOne results=${JSON.stringify(results, null, 3)}`)
+                    },
+                    function (error: any) {
+                        console.error(`deleteOne REJECT error=${JSON.stringify(error, null, 3)}`)
+                    })
+            },
+            function (error: any) {
+                console.error(`insert REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+
+    };
+
+    const onValidate = () => {
+
+        console.log('Invoke onValidate');
+
+        authenticationState.authValid = false;
+
+        if (authenticationState.authValid) {
+            console.log("Validation: current access token valid")
+        }
+            //
+            //  Either (1) there was no current token, (2) the current token is not valid, (3) the server/namespace changed
+        //
+        else {
+            if (authenticationState.serverType == "Internal") {
+                let username: string = internalUsername;
+                let password: string = internalPassword;
+
+                console.log("Validation: INTERNAL")
+
+                authWithInternal(username, password).then(
+                    function (newAuthState: any) {
+                        authenticationState = newAuthState;
+                        let auth: string = JSON.stringify(authenticationState, null, 3)
+                        console.log(`Validation: authValid=${authenticationState.authValid} authState=${auth}`);
+                    },
+                    function (error: any) {
+                        console.error(`Validation INTERNAL REJECT error=${JSON.stringify(error)}`)
+                    }
+                );
+
+            } else if (authenticationState.serverType == VantiqOAuth) {
+                console.log("Validation: OAUTH");
+                // vantiqReact on staging
+                authWithOAuth(OAUthUrlScheme, OAuthClientId).then(
+                    function (newAuthState: any) {
+                        authenticationState = newAuthState;
+                        let auth: string = JSON.stringify(authenticationState, null, 3)
+                        console.log(`Validation: authValid=${authenticationState.authValid} authState=${auth}`);
+                    },
+                    function (error: any) {
+                        console.error(`Validation OAUTH REJECT error=${JSON.stringify(error)}`);
+                    }
+                );
+            } else {
+                console.error(`Validation FAIL: serverType invalid=${authenticationState.serverType}`);
+            }
+        }
+    };
+
+    const onRefresh = () => {
+
+        console.log('Invoke onRefresh');
+
+        authenticationState.authValid = false;
+
+        if (authenticationState.serverType == VantiqInternal) {
+            console.error(`Can't Refresh Internal`);
+
+        } else if (authenticationState.serverType == VantiqOAuth) {
+            console.log("Refesh: OAUTH");
+            // vantiqReact on staging
+            verifyAuthToken().then(
+                function (newAuthState: any) {
+                    authenticationState = newAuthState;
+                    let auth: string = JSON.stringify(authenticationState, null, 3)
+                    console.log(`Validation: authValid=${authenticationState.authValid} authState=${auth}`);
+                },
+                function (error: any) {
+                    console.error(`Validation OAUTH REJECT error=${JSON.stringify(error)}`);
+                }
+            );
+        }
+
+    };
+
+    // @ts-ignore
+    // @ts-ignore
     return (
         <RootSiblingParent>
             <View style={styles.container}>
@@ -499,20 +619,97 @@ export default function Index() {
                     </Pressable>) : null
                 }
                 {(uiType=='single') ?
-                    (<View>
-                         <Button title="Validate" color="#00ffff" onPress={onValidate}/>
-                         <Button title="Refresh" color="#aa0000" onPress={onRefresh}/>
-                         <Button title="Select" color="#880088" onPress={onSelect}/>
-                         <Button title="SelectOne" color="#cc00cc" onPress={onSelectOne} />
-                         <Button title="Count" color="#220022" onPress={onCount}/>
-                         <Button title="Insert" color="#338833" onPress={onInsert}/>
-                         <Button title="Update" color="#882288" onPress={onUpdate}/>
-                         <Button title="Upsert" color="#6622dd" onPress={onUpsert}/>
-                         <Button title="Delete" color="#6622dd" onPress={onDelete}/>
-                         <Button title="Delete One" color="#6622dd" onPress={onDeleteOne}/>
-                         <Button title="Execute" color="#2255dd" onPress={onExecute}/>
-                         <Button title="Publish" color="#3388aa" onPress={onPublish}/>
-                     </View>) : null
+                    (
+                        <View style={styles.container1}>
+                            <View style={styles.navButtons}>
+                                <Button
+                                    title="Validate"
+                                    color="#aa0000"
+                                    onPress={onValidate}
+                                />
+                                <Button
+                                    title="Refresh"
+                                    color="#aa0000"
+                                    onPress={onRefresh}
+                                />
+                            </View>
+                            <View style={styles.navButtons}>
+                                <Button
+                                    title="Select"
+                                    color="#880088"
+                                    onPress={onSelect}
+                                />
+                                <Button
+                                    title="SelectOne"
+                                    color="#880088"
+                                    onPress={onSelectOne}
+                                />
+                                <Button
+                                    title="Count"
+                                    color="#880088"
+                                    onPress={onCount}
+                                />
+                            </View>
+                            <View style={styles.navButtons}>
+                                <Button
+                                    title="Insert"
+                                    color="#338833"
+                                    onPress={onInsert}
+                                />
+                                <Button
+                                    title="Update"
+                                    color="#338833"
+                                    onPress={onUpdate}
+                                />
+                                <Button
+                                    title="Upsert"
+                                    color="#338833"
+                                    onPress={onUpsert}
+                                />
+                            </View>
+
+                            <View style={styles.navButtons}>
+                                <Button
+                                    title="Delete"
+                                    color="#6622dd"
+                                    onPress={onDelete}
+                                />
+                                <Button
+                                    title="Delete One"
+                                    color="#6622dd"
+                                    onPress={onDeleteOne}
+                                />
+                            </View>
+
+                            <View style={styles.navButtons}>
+                                <Button
+                                    title="Execute By Name"
+                                    color="#2255dd"
+                                    onPress={onExecuteByName}
+                                />
+                                <Button
+                                    title="Execute By Position"
+                                    color="#2255dd"
+                                    onPress={onExecuteByPosition}
+                                />
+                            </View>
+
+                            <View style={styles.navButtons}>
+                                <Button
+                                    title="Publish"
+                                    color="#3388aa"
+                                    onPress={onPublish}
+                                />
+                                <Button
+                                    title="Publish Event"
+                                    color="#3388aa"
+                                    onPress={onPublishEvent}
+                                />
+                            </View>
+
+
+                        </View>
+                    ) : null
                 }
                 {authVisible ?
                     (<TextInput style={styles.textInput} placeholder="Username" value={internalUsername} onChangeText={setInternalUsername} autoCapitalize='none' autoCorrect={false}></TextInput>) : null}
@@ -524,7 +721,9 @@ export default function Index() {
                      </Pressable>) : null
                 }
                 {(uiType == 'suite') ?
-                    (<ScrollView ref={ref => {this.scrollView = ref}}
+                    (<ScrollView ref={ref => { // @ts-ignore
+                        this.scrollView = ref}}
+                    // @ts-ignore
                      onContentSizeChange={() => this.scrollView.scrollToEnd({animated: true})}>
                         <Text style={styles.transcript}>{transcript}</Text>
                      </ScrollView>) : null
@@ -539,6 +738,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'column',
     marginVertical: 80,
+      rowGap: 20
   },
   text: {
     color: 'lightgrey',
@@ -578,4 +778,14 @@ const styles = StyleSheet.create({
     height: 30,
     fontSize: 16,
   },
+    navButtons: {
+        flexDirection: 'row',
+        columnGap: 16
+    },
+    container1: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        rowGap: 20
+    },
 });

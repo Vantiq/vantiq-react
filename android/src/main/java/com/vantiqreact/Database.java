@@ -265,7 +265,13 @@ public class Database
         {
             Object body = vr.getBody();
             JsonObject jo = (JsonObject) body;
-            promise.resolve(convertToWritableMap(jo));
+            WritableArray wa = Arguments.createArray();
+            if (body != null)
+            {
+                WritableMap map = convertToWritableMap(jo);
+                wa.pushMap(map);
+            }
+            promise.resolve(wa);
         }
         else if (vr.getStatusCode() == 401)
         {
