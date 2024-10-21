@@ -20,18 +20,6 @@ RCT_EXPORT_MODULE()
 // our one globally-available Vantiq UI endpoint
 VantiqUI *vui;
 
-// Example method
-// See // https://reactnative.dev/docs/native-modules-ios
-RCT_EXPORT_METHOD(multiply:(double)a
-                  b:(double)b
-                  resolve:(RCTPromiseResolveBlock)resolve
-                  reject:(RCTPromiseRejectBlock)reject)
-{
-    NSNumber *result = @(a * b);
-
-    resolve(result);
-}
-
 /*** Exported methods for Vantiq authentication-oriented operations
  **/
 RCT_EXPORT_METHOD(init:(NSString *)serverURL namespace:(NSString *)namespace resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
@@ -151,11 +139,13 @@ RCT_EXPORT_METHOD(authWithInternal:(NSString *)username password:(NSString *)pas
 RCT_EXPORT_METHOD(select:(NSString *)type props:(NSArray *)props where:(NSDictionary *)where
   sort:(NSDictionary *)sort limit:(int)limit resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
   NSString *whereStr = [self dictionaryToJSONString:where];
+  whereStr = whereStr ? whereStr : @"{}";
   NSString *sortStr = [self dictionaryToJSONString:sort];
+  sortStr = sortStr ? sortStr : @"{}";
   if (whereStr && sortStr) {
     [vui ensureValidToken:^(NSDictionary *response) {
-      NSString *authValid = [response objectForKey:@"authValid"];
-      if (authValid && [authValid isEqualToString:@"true"]) {
+      BOOL authValid = [response objectForKey:@"authValid"];
+      if (authValid) {
         [vui.v select:type props:props where:whereStr sort:sortStr limit:limit
     completionHandler:^(NSArray *data, NSHTTPURLResponse *response, NSError *error) {
           data = data ? data : @[];
@@ -173,8 +163,8 @@ RCT_EXPORT_METHOD(select:(NSString *)type props:(NSArray *)props where:(NSDictio
 RCT_EXPORT_METHOD(selectOne:(NSString *)type id:(NSString *)id
   resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
   [vui ensureValidToken:^(NSDictionary *response) {
-    NSString *authValid = [response objectForKey:@"authValid"];
-    if (authValid && [authValid isEqualToString:@"true"]) {
+    BOOL authValid = [response objectForKey:@"authValid"];
+    if (authValid) {
       [vui.v selectOne:type id:id completionHandler:^(NSArray *data, NSHTTPURLResponse *response, NSError *error) {
         data = data ? data : @[];
         [self resolveRESTPromise:data response:response error:error resolver:resolve rejector:reject];
@@ -188,10 +178,11 @@ RCT_EXPORT_METHOD(selectOne:(NSString *)type id:(NSString *)id
 RCT_EXPORT_METHOD(insert:(NSString *)type object:(NSDictionary *)object
   resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
   NSString *objectStr = [self dictionaryToJSONString:object];
+  objectStr = objectStr ? objectStr : @"{}";
   if (objectStr) {
     [vui ensureValidToken:^(NSDictionary *response) {
-      NSString *authValid = [response objectForKey:@"authValid"];
-      if (authValid && [authValid isEqualToString:@"true"]) {
+      BOOL authValid = [response objectForKey:@"authValid"];
+      if (authValid) {
         [vui.v insert:type object:objectStr completionHandler:^(NSDictionary *data, NSHTTPURLResponse *response, NSError *error) {
           data = data ? data : [[NSDictionary alloc] init];
           [self resolveRESTPromise:data response:response error:error resolver:resolve rejector:reject];
@@ -208,10 +199,11 @@ RCT_EXPORT_METHOD(insert:(NSString *)type object:(NSDictionary *)object
 RCT_EXPORT_METHOD(upsert:(NSString *)type object:(NSDictionary *)object
   resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
   NSString *objectStr = [self dictionaryToJSONString:object];
+  objectStr = objectStr ? objectStr : @"{}";
   if (objectStr) {
     [vui ensureValidToken:^(NSDictionary *response) {
-      NSString *authValid = [response objectForKey:@"authValid"];
-      if (authValid && [authValid isEqualToString:@"true"]) {
+      BOOL authValid = [response objectForKey:@"authValid"];
+      if (authValid) {
         [vui.v upsert:type object:objectStr completionHandler:^(NSDictionary *data, NSHTTPURLResponse *response, NSError *error) {
           data = data ? data : [[NSDictionary alloc] init];
           [self resolveRESTPromise:data response:response error:error resolver:resolve rejector:reject];
@@ -228,10 +220,11 @@ RCT_EXPORT_METHOD(upsert:(NSString *)type object:(NSDictionary *)object
 RCT_EXPORT_METHOD(count:(NSString *)type where:(NSDictionary *)where
   resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
   NSString *whereStr = [self dictionaryToJSONString:where];
+  whereStr = whereStr ? whereStr : @"{}";
   if (whereStr) {
     [vui ensureValidToken:^(NSDictionary *response) {
-      NSString *authValid = [response objectForKey:@"authValid"];
-      if (authValid && [authValid isEqualToString:@"true"]) {
+      BOOL authValid = [response objectForKey:@"authValid"];
+      if (authValid) {
         [vui.v count:type where:whereStr completionHandler:^(int count, NSHTTPURLResponse *response, NSError *error) {
           [self resolveRESTPromise:[NSNumber numberWithInt:count] response:response error:error resolver:resolve rejector:reject];
         }];
@@ -247,10 +240,11 @@ RCT_EXPORT_METHOD(count:(NSString *)type where:(NSDictionary *)where
 RCT_EXPORT_METHOD(update:(NSString *)type id:(NSString *)ID object:(NSDictionary *)object
   resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
   NSString *objectStr = [self dictionaryToJSONString:object];
+  objectStr = objectStr ? objectStr : @"{}";
   if (objectStr) {
     [vui ensureValidToken:^(NSDictionary *response) {
-      NSString *authValid = [response objectForKey:@"authValid"];
-      if (authValid && [authValid isEqualToString:@"true"]) {
+      BOOL authValid = [response objectForKey:@"authValid"];
+      if (authValid) {
         [vui.v update:type id:ID object:objectStr completionHandler:^(NSDictionary *data, NSHTTPURLResponse *response, NSError *error) {
           data = data ? data : [[NSDictionary alloc] init];
           [self resolveRESTPromise:data response:response error:error resolver:resolve rejector:reject];
@@ -267,10 +261,11 @@ RCT_EXPORT_METHOD(update:(NSString *)type id:(NSString *)ID object:(NSDictionary
 RCT_EXPORT_METHOD(publish:(NSString *)topic message:(NSDictionary *)message
   resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
   NSString *messageStr = [self dictionaryToJSONString:message];
+  messageStr = messageStr ? messageStr : @"{}";
   if (messageStr) {
     [vui ensureValidToken:^(NSDictionary *response) {
-      NSString *authValid = [response objectForKey:@"authValid"];
-      if (authValid && [authValid isEqualToString:@"true"]) {
+      BOOL authValid = [response objectForKey:@"authValid"];
+      if (authValid) {
         [vui.v publish:topic message:messageStr completionHandler:^(NSHTTPURLResponse *response, NSError *error) {
           [self resolveRESTPromise:nil response:response error:error resolver:resolve rejector:reject];
         }];
@@ -283,13 +278,35 @@ RCT_EXPORT_METHOD(publish:(NSString *)topic message:(NSDictionary *)message
   }
 }
 
-RCT_EXPORT_METHOD(execute:(NSString *)procedure params:(NSArray *)params
+RCT_EXPORT_METHOD(publishEvent:(NSString *)resource
+  event:(NSString *)event message:(NSDictionary *)message
+  resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
+  NSString *messageStr = [self dictionaryToJSONString:message];
+  messageStr = messageStr ? messageStr : @"{}";
+  if (messageStr) {
+    [vui ensureValidToken:^(NSDictionary *response) {
+      BOOL authValid = [response objectForKey:@"authValid"];
+      if (authValid) {
+          [vui.v publishEvent:resource event:event message:messageStr completionHandler:^(NSHTTPURLResponse *response, NSError *error) {
+          [self resolveRESTPromise:nil response:response error:error resolver:resolve rejector:reject];
+        }];
+      } else {
+        [self sendAuthReject:reject];
+      }
+    }];
+  } else {
+    [self sendJSONReject:reject];
+  }
+}
+
+RCT_EXPORT_METHOD(execute:(NSString *)procedure params:(id)params
   resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
   NSString *paramsStr = [self dictionaryToJSONString:params];
+  paramsStr = paramsStr ? paramsStr : @"{}";
   if (paramsStr) {
     [vui ensureValidToken:^(NSDictionary *response) {
-      NSString *authValid = [response objectForKey:@"authValid"];
-      if (authValid && [authValid isEqualToString:@"true"]) {
+      BOOL authValid = [response objectForKey:@"authValid"];
+      if (authValid) {
         [vui.v execute:procedure params:paramsStr completionHandler:^(NSDictionary *data, NSHTTPURLResponse *response, NSError *error) {
           data = data ? data : [[NSDictionary alloc] init];
           [self resolveRESTPromise:data response:response error:error resolver:resolve rejector:reject];
@@ -306,8 +323,8 @@ RCT_EXPORT_METHOD(execute:(NSString *)procedure params:(NSArray *)params
 RCT_EXPORT_METHOD(deleteOne:(NSString *)type id:(NSString *)ID
   resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
   [vui ensureValidToken:^(NSDictionary *response) {
-    NSString *authValid = [response objectForKey:@"authValid"];
-    if (authValid && [authValid isEqualToString:@"true"]) {
+    BOOL authValid = [response objectForKey:@"authValid"];
+    if (authValid) {
       [vui.v deleteOne:type id:ID completionHandler:^(NSHTTPURLResponse *response, NSError *error) {
         [self resolveRESTPromise:nil response:response error:error resolver:resolve rejector:reject];
       }];
@@ -320,10 +337,11 @@ RCT_EXPORT_METHOD(deleteOne:(NSString *)type id:(NSString *)ID
 RCT_EXPORT_METHOD(delete:(NSString *)type where:(NSDictionary *)where
   resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
   NSString *whereStr = [self dictionaryToJSONString:where];
+  whereStr = whereStr ? whereStr : @"{}";
   if (whereStr) {
     [vui ensureValidToken:^(NSDictionary *response) {
-      NSString *authValid = [response objectForKey:@"authValid"];
-      if (authValid && [authValid isEqualToString:@"true"]) {
+        BOOL authValid = [response objectForKey:@"authValid"];
+      if (authValid) {
         [vui.v delete:type where:whereStr completionHandler:^(NSHTTPURLResponse *response, NSError *error) {
           [self resolveRESTPromise:nil response:response error:error resolver:resolve rejector:reject];
         }];
