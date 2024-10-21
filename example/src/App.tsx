@@ -166,14 +166,21 @@ export default function Index() {
                 });
         }, 14000);
         setTimeout(function() {
-            //VantiqReact.execute('sumTwo', [35, 21]).then(
-            VantiqReact.execute('sumTwo', {"val1":35, "val2":21}).then(
+            VantiqReact.executeByName('sumTwo', {"val1":35, "val2":21}).then(
                 function(data) {
-                    addToTranscript('Execute successful: ' + JSON.stringify(data));
+                    addToTranscript('ExecuteByName successful: ' + JSON.stringify(data));
                 }, function(error) {
-                    reportTestError('Execute', error);
+                    reportTestError('ExecuteByName', error);
                 });
         }, 16000);
+        setTimeout(function() {
+            VantiqReact.executeByPosition('sumTwo', [35, 21]).then(
+                function(data) {
+                    addToTranscript('ExecuteByPosition successful: ' + JSON.stringify(data));
+                }, function(error) {
+                    reportTestError('ExecuteByPosition', error);
+                });
+        }, 18000);
         setTimeout(function() {
             VantiqReact.deleteOne('TestType', lastVantiqID).then(
                 function(data) {
@@ -181,7 +188,7 @@ export default function Index() {
                 }, function(error) {
                     reportTestError('DeleteOne', error);
                 });
-        }, 18000);
+        }, 20000);
         setTimeout(function() {
             VantiqReact.delete('TestType', {"intValue":42}).then(
                 function(data) {
@@ -189,7 +196,7 @@ export default function Index() {
                 }, function(error) {
                     reportTestError('Delete', error);
                 });
-        }, 20000);
+        }, 22000);
         setTimeout(function() {
             VantiqReact.select('system.types', ["name", "_id"], {}, {"name":-1}, -1).then(
                 function(data) {
@@ -198,7 +205,7 @@ export default function Index() {
                 }, function(error) {
                     reportTestError('Select', error);
                 });
-        }, 22000);
+        }, 24000);
         setTimeout(function() {
             VantiqReact.delete('TestType', {"intValue":42}).then(
                 function(data) {
@@ -212,7 +219,7 @@ export default function Index() {
                     setStartVisible(true);
                     setRunningSuite(false);
                 });
-        }, 24000);
+        }, 26000);
     }
     
     // methods for running in single mode

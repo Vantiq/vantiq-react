@@ -299,25 +299,36 @@ RCT_EXPORT_METHOD(publishEvent:(NSString *)resource
   }
 }
 
-RCT_EXPORT_METHOD(execute:(NSString *)procedure params:(id)params
+// helper that performs the actual call to execute -- this is necessary since the Android
+// version needs two versions of export: executeByName and executeByPositon
+- (void)execute:(NSString *)procedure params:(id)params
+    resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject {
+    NSString *paramsStr = [self dictionaryToJSONString:params];
+    paramsStr = paramsStr ? paramsStr : @"{}";
+    if (paramsStr) {
+      [vui ensureValidToken:^(NSDictionary *response) {
+        BOOL authValid = [response objectForKey:@"authValid"];
+        if (authValid) {
+          [vui.v execute:procedure params:paramsStr completionHandler:^(NSDictionary *data, NSHTTPURLResponse *response, NSError *error) {
+            data = data ? data : [[NSDictionary alloc] init];
+            [self resolveRESTPromise:data response:response error:error resolver:resolve rejector:reject];
+          }];
+        } else {
+          [self sendAuthReject:reject];
+        }
+      }];
+    } else {
+      [self sendJSONReject:reject];
+    }
+}
+
+RCT_EXPORT_METHOD(executeByName:(NSString *)procedure params:(id)params
   resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
-  NSString *paramsStr = [self dictionaryToJSONString:params];
-  paramsStr = paramsStr ? paramsStr : @"{}";
-  if (paramsStr) {
-    [vui ensureValidToken:^(NSDictionary *response) {
-      BOOL authValid = [response objectForKey:@"authValid"];
-      if (authValid) {
-        [vui.v execute:procedure params:paramsStr completionHandler:^(NSDictionary *data, NSHTTPURLResponse *response, NSError *error) {
-          data = data ? data : [[NSDictionary alloc] init];
-          [self resolveRESTPromise:data response:response error:error resolver:resolve rejector:reject];
-        }];
-      } else {
-        [self sendAuthReject:reject];
-      }
-    }];
-  } else {
-    [self sendJSONReject:reject];
-  }
+  [self execute:procedure params:params resolver:resolve rejector:reject];
+}
+RCT_EXPORT_METHOD(executeByPosition:(NSString *)procedure params:(id)params
+  resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
+  [self execute:procedure params:params resolver:resolve rejector:reject];
 }
 
 RCT_EXPORT_METHOD(deleteOne:(NSString *)type id:(NSString *)ID
