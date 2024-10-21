@@ -119,7 +119,6 @@ export default function App() {
         let procedureName: string = "TestProc";
         console.log('Invoke Execute By Position');
 
-
         let params: any = [15, 7];
         executeByPosition(procedureName, params).then(function (results: any) {
                 console.log(`execute results=${JSON.stringify(results, null, 3)}`)
@@ -127,24 +126,40 @@ export default function App() {
             function (error: any) {
                 console.error(`execute REJECT error=${JSON.stringify(error, null, 3)}`)
             })
-
     };
 
 
     const onDelete = () => {
         let type: string = "a.b.c.MyType";
-        // @ts-ignore
-        let where: string = {
-            bbb: "b2"
+        let object: any = {
+            MyBoolean: false,
+            ccc: "CCC DELETE WHERE",
+            bbb: "BBB DELETE WHERE " + Math.random(),
+            aaa: "AAA DELETE WHERE"
         };
 
-        console.log('Invoke Select');
+        console.log('Invoke Insert to delete-where a record');
 
-        deleteWhere(type, where).then(function (results: any) {
-                console.log(`delete results=${JSON.stringify(results, null, 3)}`)
+        insert(type, object).then(function (results: any)
+            {
+                console.log(`insert results=${JSON.stringify(results, null, 3)}`);
+                console.log('Invoke DeleteWhere to delete record');
+
+                let where: any = {
+                    ccc: "CCC DELETE WHERE"
+                };
+
+                console.log('Invoke Select');
+
+                deleteWhere(type, where).then(function (results: any) {
+                        console.log(`delete results=${JSON.stringify(results, null, 3)}`)
+                    },
+                    function (error: any) {
+                        console.error(`delete REJECT error=${JSON.stringify(error, null, 3)}`)
+                    })
             },
             function (error: any) {
-                console.error(`delete REJECT error=${JSON.stringify(error, null, 3)}`)
+                console.error(`insert REJECT error=${JSON.stringify(error, null, 3)}`)
             })
     };
 
@@ -210,7 +225,7 @@ export default function App() {
         let object: any = {
             MyBoolean: false,
             bbb: "NATKEY",
-            aaa: "AAAA UPDATE " + Math.random()
+            aaa: "AAAA UPSERT " + Math.random()
         };
 
         console.log('Invoke Upsert');
@@ -228,28 +243,69 @@ export default function App() {
         let type: string = "a.b.c.MyType";
         let object: any = {
             MyBoolean: false,
-            ccc: "CCCC UPDATE " + Math.random()
+            ccc: "CCC INSERTED TO TEST UPDATE",
+            bbb: "BBB INSERTED TO TEST UPDATE " + Math.random(),
+            aaa: "AAA INSERTED TO TEST UPDATE"
         };
-        let id: string = "6700304b033ebc6020bf1f2f";
 
-        console.log('Invoke Update1');
+        console.log('Invoke Insert to add a record');
 
-        update(type, id, object).then(function (results: any) {
-                console.log(`update results=${JSON.stringify(results, null, 3)}`)
+        insert(type, object).then(function (results: any)
+            {
+                console.log(`insert results=${JSON.stringify(results, null, 3)}`);
+
+                object = results;
+                let id: string = object._id;
+                object.ccc = object.ccc += " - UPDATED";
+                delete object._id;
+
+                console.log('Invoke Update to update record ' + id);
+
+                update(type, id, object).then(function (results: any) {
+                        console.log(`update results=${JSON.stringify(results, null, 3)}`)
+                    },
+                    function (error: any) {
+                        console.error(`update REJECT error=${JSON.stringify(error, null, 3)}`)
+                    })
             },
             function (error: any) {
-                console.error(`update REJECT error=${JSON.stringify(error, null, 3)}`)
+                console.error(`insert REJECT error=${JSON.stringify(error, null, 3)}`)
             })
     };
 
     const onSelectOne = () => {
         let type: string = "a.b.c.MyType";
-        let id: string = "66ff306d033ebc6020bf11ce";
+        // @ts-ignore
+        let props: string[] = null;
+        let where: any = {
+            bbb: "b"
+        };
+        let sortSpec: any = null;
+        let limit: number = 100;
 
-        console.log('Invoke SelectOne');
+        console.log("Invoke Select for object with 'bbb'='b'");
 
-        selectOne(type, id).then(function (results: any) {
+        select(type, props, where, sortSpec, limit).then(function (results: any)
+            {
                 console.log(`select results=${JSON.stringify(results, null, 3)}`)
+
+                if (results.length == 1)
+                {
+                    let id:string = results[0]._id;
+                    console.log('Invoke SelectOne with id=' + id);
+
+                    selectOne(type, id).then(function (results: any) {
+                            console.log(`selectOne results=${JSON.stringify(results, null, 3)}`)
+                        },
+                        function (error: any) {
+                            console.error(`selectOne REJECT error=${JSON.stringify(error, null, 3)}`)
+                        })
+                }
+                else
+                {
+                    console.log(`Expected record was missing`);
+                }
+
             },
             function (error: any) {
                 console.error(`select REJECT error=${JSON.stringify(error, null, 3)}`)
@@ -258,16 +314,34 @@ export default function App() {
 
     const onDeleteOne = () => {
         let type: string = "a.b.c.MyType";
-        let id: string = "670416e4a7952f7630942965";
+        let object: any = {
+            MyBoolean: false,
+            ccc: "CCC DELETE ONE",
+            bbb: "BBB DELETE ONE " + Math.random(),
+            aaa: "AAA DELETE ONE"
+        };
 
-        console.log('Invoke DeleteOne');
+        console.log('Invoke Insert to add a record');
 
-        deleteOne(type, id).then(function (results: any) {
-                console.log(`deleteOne results=${JSON.stringify(results, null, 3)}`)
+        insert(type, object).then(function (results: any)
+            {
+                console.log(`insert results=${JSON.stringify(results, null, 3)}`);
+
+                let id: string = results._id;
+
+                console.log('Invoke DeleteOne to delete record ' + id);
+
+                deleteOne(type, id).then(function (results: any) {
+                        console.log(`deleteOne results=${JSON.stringify(results, null, 3)}`)
+                    },
+                    function (error: any) {
+                        console.error(`deleteOne REJECT error=${JSON.stringify(error, null, 3)}`)
+                    })
             },
             function (error: any) {
-                console.error(`deleteOne REJECT error=${JSON.stringify(error, null, 3)}`)
+                console.error(`insert REJECT error=${JSON.stringify(error, null, 3)}`)
             })
+
     };
 
     const onValidate = () => {
@@ -382,7 +456,7 @@ export default function App() {
             <View style={styles.navButtons}>
                 <Button
                     title="Validate"
-                    color="#00ffff"
+                    color="#aa0000"
                     onPress={onValidate}
                 />
                 <Button
@@ -402,13 +476,13 @@ export default function App() {
 
                 <Button
                     title="SelectOne"
-                    color="#cc00cc"
+                    color="#880088"
                     onPress={onSelectOne}
                 />
 
                 <Button
                     title="Count"
-                    color="#220022"
+                    color="#880088"
                     onPress={onCount}
                 />
             </View>
@@ -421,13 +495,13 @@ export default function App() {
 
                 <Button
                     title="Update"
-                    color="#882288"
+                    color="#338833"
                     onPress={onUpdate}
                 />
 
                 <Button
                     title="Upsert"
-                    color="#6622dd"
+                    color="#338833"
                     onPress={onUpsert}
                 />
             </View>
