@@ -87,11 +87,27 @@ export function executeByName(procedureName: string, params: any): Promise<strin
     return VantiqReact.executeByName(procedureName, params);
 }
 
+export function executeStreamedByPosition(procedureName: string, params: any[], progressEvent:string): Promise<string> {
+    return VantiqReact.executeStreamedByPosition(procedureName, params, progressEvent);
+}
+
+export function executeStreamedByName(procedureName: string, params: any, progressEvent:string): Promise<string> {
+    return VantiqReact.executeStreamedByName(procedureName, params, progressEvent);
+}
+
 export function publish(topic: string, object: any): Promise<string> {
     return VantiqReact.publish(topic, object);
 }
 
 export function publishEvent(resource: string, resourceId:string, object: any): Promise<string> {
     return VantiqReact.publishEvent(resource, resourceId, object);
+}
+
+export function createInternalUser(username:string, password:string, email:string, firstName:string, lastName:string, phone:string): Promise<string> {
+    return VantiqReact.createInternalUser(username, password, email, firstName, lastName, phone);
+}
+
+export function createOAuthUser(urlScheme: string, clientId: string): Promise<string> {
+    return VantiqReact.createOAuthUser(urlScheme, clientId);
 }
 

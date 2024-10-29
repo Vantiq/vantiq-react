@@ -144,5 +144,6 @@ dependencies {
   //  The Vantiq Android Library - for now this is just in maven local
   //
   implementation 'io.vantiq.androidlibrary:lib:1.0'
+  implementation("com.launchdarkly:okhttp-eventsource:4.1.1")
 }
 

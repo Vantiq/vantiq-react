@@ -2,12 +2,22 @@ import {useEffect, useState} from 'react'
 import { NativeModules, StyleSheet, Pressable, Text, View, TextInput, ScrollView, Button } from "react-native";
 import { RootSiblingParent } from 'react-native-root-siblings';
 
-import {init, authWithInternal, authWithOAuth, select, selectOne, count,
-  insert, update, upsert, deleteOne, deleteWhere, executeByName, executeByPosition, publish, publishEvent, verifyAuthToken} from 'vantiq-react';
+import {NativeEventEmitter} from 'react-native';
+
+import {init, authWithInternal, authWithOAuth, select, selectOne, count, createInternalUser, createOAuthUser,
+    insert, update, upsert, deleteOne, deleteWhere, executeByName, executeByPosition, publish, publishEvent, verifyAuthToken, 
+    executeStreamedByName, executeStreamedByPosition} from 'vantiq-react';
 
 const {VantiqReact} = NativeModules;
+
 const VANTIQ_SERVER:string = 'https://staging.vantiq.com';
 const VANTIQ_NAMESPACE:string = 'react'
+const FORCELOGIN:boolean = true;  //  Normal scenario where we automatically establish a login
+
+//const VANTIQ_SERVER:string = 'http://10.0.0.208:8080';
+//const VANTIQ_NAMESPACE:string = 'Scratch1';
+//const FORCELOGIN:boolean = true; //  Normal scenario where we automatically establish a login
+
 const VantiqInternal:string = "Internal";
 const VantiqOAuth:string = "OAuth";
 const OAuthClientId = "vantiqReact";
@@ -29,9 +39,11 @@ export default function Index() {
         init(VANTIQ_SERVER, VANTIQ_NAMESPACE).then(
           function(response:any) {
              authenticationState = response;
+
              if (response.authValid) {
                  setStartVisible(true);
-             } else {
+             } else if (FORCELOGIN)
+             {
                  // authentication error so need to authenticate
                  if (response.serverType == VantiqInternal) {
                      setAuthVisible(true);
@@ -50,9 +62,27 @@ export default function Index() {
                      addToTranscript('Invalid server type');
                  }
              }
+             else
+             {
+                 console.log("Not Authenticated");
+             }
            }, function(error:any) {
              addToTranscript('init fail: ' + error.errorStr);
            });
+
+        const eventEmitter = new NativeEventEmitter(NativeModules.ToastExample);
+        let eventListener1 = eventEmitter.addListener("TestExecuteStreamedByName", event => {
+            console.log(JSON.stringify(event,null,3)) // "someValue"
+        });
+        let eventListener2 = eventEmitter.addListener("TestExecuteStreamedByPosition", event => {
+            console.log(JSON.stringify(event,null,3)) // "someValue"
+        });
+        // Removes the listener once unmounted
+        return () => {
+            eventListener1.remove();
+            eventListener2.remove();
+        };
+        
     }, []);
 
     // user presses the Start Running button
@@ -268,7 +298,7 @@ export default function Index() {
         let procedureName: string = "TestProc";
         console.log('Invoke Execute By Position');
 
-        let params: any = [15, 7];
+        let params: any = [10, 1000];
         executeByPosition(procedureName, params).then(function (results: any) {
                 console.log(`execute results=${JSON.stringify(results, null, 3)}`)
             },
@@ -276,8 +306,63 @@ export default function Index() {
                 console.error(`execute REJECT error=${JSON.stringify(error, null, 3)}`)
             })
     };
+    
 
+    const onExecuteStreamedByName = () => {
+        let procedureName: string = "TestStreamedProc";
+        console.log('Invoke Execute Streamed By Name');
 
+        let params: any =  {
+            nnn:30,
+            delay:1000
+        };
+        
+        executeStreamedByName(procedureName, params, "TestExecuteStreamedByName").then(
+            function (results: any)
+            {
+                console.log(`execute results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any)
+            {
+                console.error(`execute REJECT error=${JSON.stringify(error, null, 3)}`)
+            });
+    };
+
+    const onExecuteStreamedByPosition = () => {
+        let procedureName: string = "TestStreamedProc";
+        console.log('Invoke Execute Streamed By Position');
+
+        let params: any = [30, 1000];
+        executeStreamedByPosition(procedureName, params, "TestExecuteStreamedByPosition").then(function (results: any)
+            {
+                console.log(`execute results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`execute REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+    const onCreateInternalUser = () => {
+        console.log('Invoke CreateInternalUser');
+
+        createInternalUser("joeUser1","x", "scl1954@gmail.com","Steve","Langley","930-6458").then(function (results: any) {
+                console.log(`createInternalUser results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`createInternalUser REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+    const onCreateOAuthUser = () => {
+        console.log('Invoke onCreateOAuthUser');
+
+        createOAuthUser(OAUthUrlScheme, OAuthClientId).then(function (results: any) {
+                console.log(`createOAuthUser results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`createOAuthUser REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+    
     const onDelete = () => {
         let type: string = "a.b.c.MyType";
         let object: any = {
@@ -693,6 +778,19 @@ export default function Index() {
                                     onPress={onExecuteByPosition}
                                 />
                             </View>
+                            <View style={styles.navButtons}>
+
+                                <Button
+                                    title="Streamed By Name"
+                                    color="#2255dd"
+                                    onPress={onExecuteStreamedByName}
+                                />
+                                <Button
+                                    title="Streamed By Position"
+                                    color="#2255dd"
+                                    onPress={onExecuteStreamedByPosition}
+                                />
+                            </View>
 
                             <View style={styles.navButtons}>
                                 <Button
@@ -707,6 +805,18 @@ export default function Index() {
                                 />
                             </View>
 
+                            <View style={styles.navButtons}>
+                                <Button
+                                    title="Create Internal User"
+                                    color="#7722dd"
+                                    onPress={onCreateInternalUser}
+                                />
+                                <Button
+                                    title="Create OAuth User"
+                                    color="#7722dd"
+                                    onPress={onCreateOAuthUser}
+                                />
+                            </View>
 
                         </View>
                     ) : null
@@ -775,7 +885,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     color: 'black',
     marginHorizontal: 80,
-    height: 30,
+    height: 40,
     fontSize: 16,
   },
     navButtons: {

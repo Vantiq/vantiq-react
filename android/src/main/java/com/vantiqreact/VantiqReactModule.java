@@ -514,6 +514,31 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     }
 
     @ReactMethod
+    public void executeStreamedByPosition(String procedureName, ReadableArray params, String progressEvent, Promise promise)
+    {
+        this.runServerOperation("execute", promise, new OnReadyToRunListener()
+        {
+            @Override
+            public void onReadyToRun()
+            {
+                db.executeStreamedByPosition(procedureName, params, progressEvent, promise);
+            }
+        });
+    }
+    @ReactMethod
+    public void executeStreamedByName(String procedureName, ReadableMap params, String progressEvent, Promise promise)
+    {
+        this.runServerOperation("execute", promise, new OnReadyToRunListener()
+        {
+            @Override
+            public void onReadyToRun()
+            {
+                db.executeStreamedByName(procedureName, params, progressEvent, promise);
+            }
+        });
+    }
+
+    @ReactMethod
     public void publish(String topic, ReadableMap message, Promise promise)
     {
         this.runServerOperation("publish", promise, new OnReadyToRunListener()
@@ -543,5 +568,26 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
         });
     }
 
+    @ReactMethod
+    public void createInternalUser(String username, String password, String email, String firstName, String lastName, String phone, Promise promise)
+    {
+        new Thread(() -> {
+            VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+            val.account.setAccessToken(null);
+            val.getVantiqSDK().setAccessToken(null);
+            db.createInternalUser(username, password, email, firstName, lastName, phone, promise);
+        }).start();
+    }
+
+    @ReactMethod
+    public void createOAuthUser(String urlScheme, String clientId, Promise promise)
+    {
+        new Thread(() -> {
+            VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+            val.account.setAccessToken(null);
+            val.getVantiqSDK().setAccessToken(null);
+            db.createOAuthUser(urlScheme,clientId,promise);
+        }).start();
+    }
 }
 
