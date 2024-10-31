@@ -17,8 +17,9 @@ NSString *veJsonParseError = @"com.vantiq.JsonParseError";
 @implementation VantiqReact
 RCT_EXPORT_MODULE()
 
-// our one globally-available Vantiq UI endpoint
+// our globally-available Vantiq UI bridge variables
 VantiqUI *vui;
+NSString *APNSDeviceToken;
 
 /*** Exported methods for Vantiq authentication-oriented operations
  **/
@@ -363,5 +364,47 @@ RCT_EXPORT_METHOD(delete:(NSString *)type where:(NSDictionary *)where
   } else {
     [self sendJSONReject:reject];
   }
+}
+
+RCT_EXPORT_METHOD(registerForPushNotifications:(RCTPromiseResolveBlock)resolve
+  rejector:(RCTPromiseRejectBlock)reject) {
+  [vui ensureValidToken:^(NSDictionary *response) {
+      BOOL authValid = [response objectForKey:@"authValid"];
+      if (authValid) {
+        [vui.v registerForPushNotifications:APNSDeviceToken
+          completionHandler:^(NSDictionary *data, NSHTTPURLResponse *response, NSError *error) {
+          [self resolveRESTPromise:nil response:response error:error resolver:resolve rejector:reject];
+        }];
+      } else {
+        [self sendAuthReject:reject];
+      }
+    }];
+}
+
+// see comment for execute above
+- (void)executeStreamed:(NSString *)procedure params:(id)params
+    progressEvent:(NSString *)progressEvent resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject {
+    [vui ensureValidToken:^(NSDictionary *response) {
+        BOOL authValid = [response objectForKey:@"authValid"];
+        if (authValid) {
+            [self sendAuthReject:reject];
+        } else {
+            [self sendAuthReject:reject];
+        }
+    }];
+}
+
+RCT_EXPORT_METHOD(executeStreamedByName:(NSString *)procedure params:(id)params
+  progressEvent:(NSString *)progressEvent resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
+  [self executeStreamed:procedure params:params progressEvent:progressEvent resolver:resolve rejector:reject];
+}
+RCT_EXPORT_METHOD(executeStreamedByPosition:(NSString *)procedure params:(id)params
+  progressEvent:(NSString *)progressEvent resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
+  [self executeStreamed:procedure params:params progressEvent:progressEvent resolver:resolve rejector:reject];
+}
+
+RCT_EXPORT_METHOD(addListener:(NSString *)eventName) {
+}
+RCT_EXPORT_METHOD(removeListeners:(nonnull NSNumber *)count) {
 }
 @end

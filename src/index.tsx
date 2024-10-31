@@ -111,3 +111,7 @@ export function createOAuthUser(urlScheme: string, clientId: string): Promise<st
     return VantiqReact.createOAuthUser(urlScheme, clientId);
 }
 
+export function registerForPushNotifications(): Promise<string> {
+	return VantiqReact.registerForPushNotifications();
+}
+

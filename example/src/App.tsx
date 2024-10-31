@@ -1,12 +1,11 @@
 import {useEffect, useState} from 'react'
 import { NativeModules, StyleSheet, Pressable, Text, View, TextInput, ScrollView, Button } from "react-native";
 import { RootSiblingParent } from 'react-native-root-siblings';
-
 import {NativeEventEmitter} from 'react-native';
 
 import {init, authWithInternal, authWithOAuth, select, selectOne, count, createInternalUser, createOAuthUser,
-    insert, update, upsert, deleteOne, deleteWhere, executeByName, executeByPosition, publish, publishEvent, verifyAuthToken, 
-    executeStreamedByName, executeStreamedByPosition} from 'vantiq-react';
+    insert, update, upsert, deleteOne, deleteWhere, executeByName, executeByPosition, publish, publishEvent,
+    verifyAuthToken, executeStreamedByName, executeStreamedByPosition, registerForPushNotifications} from 'vantiq-react';
 
 const {VantiqReact} = NativeModules;
 
@@ -42,6 +41,7 @@ export default function Index() {
 
              if (response.authValid) {
                  setStartVisible(true);
+                 registerForPushNotifications();
              } else if (FORCELOGIN)
              {
                  // authentication error so need to authenticate
@@ -52,6 +52,7 @@ export default function Index() {
                         function(response:any) {
                            if (response.authValid) {
                                setStartVisible(true);
+                               registerForPushNotifications();
                            } else {
                                addToTranscript('Authentication error: ' + response.errorStr);
                            }
@@ -70,7 +71,7 @@ export default function Index() {
              addToTranscript('init fail: ' + error.errorStr);
            });
 
-        const eventEmitter = new NativeEventEmitter(NativeModules.ToastExample);
+        const eventEmitter = new NativeEventEmitter(NativeModules.VantiqReact);
         let eventListener1 = eventEmitter.addListener("TestExecuteStreamedByName", event => {
             console.log(JSON.stringify(event,null,3)) // "someValue"
         });
@@ -103,6 +104,7 @@ export default function Index() {
         VantiqReact.authWithInternal(internalUsername, internalPassword).then(
             function(response:any) {
                if (response.authValid) {
+                   registerForPushNotifications();
                    runTests();
                } else {
                    addToTranscript('Authentication error: ' + response.errorStr);
@@ -112,6 +114,16 @@ export default function Index() {
                 setAuthVisible(true);
                 addToTranscript('Authentication error: ' + error.message + ", code: " + error.code);
             });
+    }
+    
+    // helper to register for push notifications, called after authenticating
+    function registerForPushNotifications() {
+        VantiqReact.registerForPushNotifications().then(
+          function() {
+              addToTranscript('Registered for Push Notifications');
+          }, function(error:any) {
+              reportTestError('Register for Push Notifications', error);
+          });
     }
     
     // helper to add text to the suite transcript
@@ -861,7 +873,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0091FF',
     color: 'white',
     marginVertical: 8,
-    marginHorizontal: 140,
+    marginHorizontal: 120,
     borderRadius: 4
   },
   modeButton: {

@@ -1529,7 +1529,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - Yoga
   - vantiq-sdk-ios (1.5.1)
-  - vantiq-ui-ios (0.3.0):
+  - vantiq-ui-ios (0.3.2):
     - AppAuth (~> 1.7.5)
     - Base64 (~> 1.1.2)
     - JWT (~> 2.2.0)
@@ -1810,7 +1810,7 @@ SPEC CHECKSUMS:
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
   vantiq-react: 19c2bf87c0dd4023acca373ab3939ce6fbe4009f
   vantiq-sdk-ios: c3ea0e2ef3731c95f519035f893e469c84eb4df0
-  vantiq-ui-ios: 384c2a8088e916c3058af8c1d19dd2ba1b5517cd
+  vantiq-ui-ios: baf6daa53627c2127b47de93177a9ddd6e2204d2
   Yoga: 4ef80d96a5534f0e01b3055f17d1e19a9fc61b63
 
 PODFILE CHECKSUM: 00da3c1c8d6d3f5f5dc26684954bdccbe15d1a05

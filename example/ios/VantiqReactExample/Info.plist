@@ -11,7 +11,20 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>location</string>
+		<string>processing</string>
+		<string>remote-notification</string>
+	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Please allow $(EXECUTABLE_NAME) to report your device&apos;s location when required for collaborations.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Please allow $(EXECUTABLE_NAME) to report your device&apos;s location when required for collaborations.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Please allow $(EXECUTABLE_NAME) to detect your device&apos;s motion when required for collaborations.</string>
 </dict>
 </plist>
