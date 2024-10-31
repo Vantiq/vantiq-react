@@ -5,7 +5,8 @@ import {NativeEventEmitter} from 'react-native';
 
 import {init, authWithInternal, authWithOAuth, select, selectOne, count, createInternalUser, createOAuthUser,
     insert, update, upsert, deleteOne, deleteWhere, executeByName, executeByPosition, publish, publishEvent,
-    verifyAuthToken, executeStreamedByName, executeStreamedByPosition, registerForPushNotifications} from 'vantiq-react';
+    verifyAuthToken, executeStreamedByName, executeStreamedByPosition, registerForPushNotifications,
+    registerSupportedEvents} from 'vantiq-react';
 
 const {VantiqReact} = NativeModules;
 
@@ -71,6 +72,7 @@ export default function Index() {
              addToTranscript('init fail: ' + error.errorStr);
            });
 
+        VantiqReact.registerSupportedEvents(["pushNotification", "TestExecuteStreamedByName", "TestExecuteStreamedByPosition"]);
         const eventEmitter = new NativeEventEmitter(NativeModules.VantiqReact);
         let eventListener1 = eventEmitter.addListener("TestExecuteStreamedByName", event => {
             console.log(JSON.stringify(event,null,3)) // "someValue"
@@ -78,10 +80,14 @@ export default function Index() {
         let eventListener2 = eventEmitter.addListener("TestExecuteStreamedByPosition", event => {
             console.log(JSON.stringify(event,null,3)) // "someValue"
         });
-        // Removes the listener once unmounted
+        let notifyListener = eventEmitter.addListener("pushNotification", event => {
+            addToTranscript("Received notification: type = " + event.type);
+        });
+        // Removes the event listeners once unmounted
         return () => {
             eventListener1.remove();
             eventListener2.remove();
+            notifyListener.remove();
         };
         
     }, []);

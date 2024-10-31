@@ -5,8 +5,9 @@
 @interface VantiqReact : NSObject <NativeVantiqReactSpec>
 #else
 #import <React/RCTBridgeModule.h>
+#import <React/RCTEventEmitter.h>
 
-@interface VantiqReact : NSObject <RCTBridgeModule>
+@interface VantiqReact : RCTEventEmitter <RCTBridgeModule>
 #endif
 
 @end

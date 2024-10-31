@@ -14,12 +14,23 @@ NSString *veServerType = @"com.vantiq.serverTypeUnknown";
 NSString *veInvalidAuthToken = @"com.vantiq.invalidAuthToken";
 NSString *veJsonParseError = @"com.vantiq.JsonParseError";
 
-@implementation VantiqReact
+@implementation VantiqReact {
+    NSArray<NSString *> *supportedEvents;
+}
 RCT_EXPORT_MODULE()
 
 // our globally-available Vantiq UI bridge variables
 VantiqUI *vui;
 NSString *APNSDeviceToken;
+
++ (id)allocWithZone:(struct _NSZone *)zone {
+    static VantiqReact *sharedInstance = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sharedInstance = [super allocWithZone:zone];
+    });
+    return sharedInstance;
+}
 
 /*** Exported methods for Vantiq authentication-oriented operations
  **/
@@ -387,7 +398,7 @@ RCT_EXPORT_METHOD(registerForPushNotifications:(RCTPromiseResolveBlock)resolve
     [vui ensureValidToken:^(NSDictionary *response) {
         BOOL authValid = [response objectForKey:@"authValid"];
         if (authValid) {
-            [self sendAuthReject:reject];
+            [self sendJSONReject:reject];
         } else {
             [self sendAuthReject:reject];
         }
@@ -403,8 +414,22 @@ RCT_EXPORT_METHOD(executeStreamedByPosition:(NSString *)procedure params:(id)par
   [self executeStreamed:procedure params:params progressEvent:progressEvent resolver:resolve rejector:reject];
 }
 
+/*** Exported methods for using React Event Emitter events
+ **/
+// mandatory methods for sub-classed RCTEventEmitter class
 RCT_EXPORT_METHOD(addListener:(NSString *)eventName) {
+    [super addListener:eventName];
 }
-RCT_EXPORT_METHOD(removeListeners:(nonnull NSNumber *)count) {
+//RCT_EXPORT_METHOD(removeListeners:(nonnull NSNumber *)count) {
+RCT_EXPORT_METHOD(removeListeners:(double)count) {
+    [super removeListeners:count];
+}
+
+// need to use registerSupportedEvents before allocating the Event Emitter
+RCT_EXPORT_METHOD(registerSupportedEvents:(NSArray<NSString *> *)_supportedEvents) {
+    supportedEvents = _supportedEvents;
+}
+- (NSArray<NSString *> *)supportedEvents {
+    return supportedEvents;
 }
 @end

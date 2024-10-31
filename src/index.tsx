@@ -115,3 +115,6 @@ export function registerForPushNotifications(): Promise<string> {
 	return VantiqReact.registerForPushNotifications();
 }
 
+export function registerSupportedEvents(eventNames:any[]): Promise<string> {
+	return VantiqReact.registerSupportedEvents(eventNames);
+}

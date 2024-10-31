@@ -2,6 +2,7 @@
 #import <UserNotifications/UserNotifications.h>
 #import "VantiqUI.h"
 #import "LastActive.h"
+#import "VantiqReact.h"
 
 #import <React/RCTBundleURLProvider.h>
 
@@ -60,6 +61,10 @@ extern NSString *APNSDeviceToken;
                 if (notifyData) {
                     NSString *dataType = [notifyData objectForKey:@"type"];
                     NSLog(@"didReceiveRemoteNotification: unhandled notification type = '%@'.", dataType);
+                  
+                    // forward the notify data to the React Native app
+                    VantiqReact *vr = [VantiqReact allocWithZone:nil];
+                    [vr sendEventWithName:@"pushNotification" body:notifyData];
                 }
                 fetchCompletionHandler(UIBackgroundFetchResultNewData);
             }
