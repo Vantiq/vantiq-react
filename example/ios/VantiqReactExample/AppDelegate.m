@@ -63,6 +63,7 @@ extern NSString *APNSDeviceToken;
                     NSLog(@"didReceiveRemoteNotification: unhandled notification type = '%@'.", dataType);
                   
                     // forward the notify data to the React Native app
+                    // see https://github.com/facebook/react-native/issues/15421
                     VantiqReact *vr = [VantiqReact allocWithZone:nil];
                     [vr sendEventWithName:@"pushNotification" body:notifyData];
                 }
