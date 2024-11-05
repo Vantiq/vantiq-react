@@ -1,21 +1,23 @@
 package com.vantiqreact;
 
+import android.app.Activity;
 import com.facebook.react.bridge.*;
-import com.facebook.react.bridge.Callback;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.google.gson.*;
 import com.vantiqreact.misc.VLog;
 import io.vantiq.androidlib.Utilities;
 import io.vantiq.androidlib.VantiqAndroidLibrary;
 import io.vantiq.androidlib.misc.Account;
-import io.vantiq.client.*;
-import io.vantiq.client.internal.VantiqSession;
+import io.vantiq.client.SortSpec;
+import io.vantiq.client.Vantiq;
+import io.vantiq.client.VantiqError;
+import io.vantiq.client.VantiqResponse;
 import okhttp3.*;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class Database
 {
@@ -74,10 +76,7 @@ public class Database
     public void reject(String op, String errorCode, String errorMsg, Promise promise)
     {
         VLog.e(TAG, "REJECT: " + op + " code=" + errorCode + " msg=" + errorMsg);
-
-        WritableMap map = Arguments.createMap();
-        map.putString("errorMsg", errorMsg);
-
+        WritableMap map = computeError(errorCode,errorMsg,0,null);
         promise.reject(errorCode, errorMsg, map);
     }
 
@@ -87,8 +86,7 @@ public class Database
 
         VLog.e(TAG, "REJECTEXCEPTION: " + op + "  msg=" + errorMessage);
 
-        WritableMap map = Arguments.createMap();
-        map.putString("errorMsg", errorMessage);
+        WritableMap map = computeError("vantiq.exception",errorMessage,0,null);
 
         promise.reject(Error.veOSError, errorMessage, map);
     }
@@ -100,35 +98,48 @@ public class Database
 
         VLog.e(TAG, "REJECTPARSE: op=" + op + " msg=" + errorMessage);
 
-        WritableMap map = Arguments.createMap();
-        map.putString("errorMsg", errorMessage);
+        WritableMap map = computeError("vantiq.exception",errorMessage,0,null);
 
         promise.reject(Error.veJsonParseError, errorMessage, map);
     }
 
-    public void rejectVantiqError(String op, VantiqError ve, Promise promise)
+    public void rejectVantiqError(String op, VantiqError ve, int statusCode, Promise promise)
     {
         String errorCode = ve.getCode();
         String errorMessage = ve.getMessage();
 
         VLog.e(TAG, "REJECTVANTIQERROR: op=" + op + " code=" + errorCode + " msg=" + errorMessage);
 
-        WritableMap map = Arguments.createMap();
-        map.putString("errorMsg", errorMessage);
+        WritableMap map = computeError(errorCode,errorMessage,statusCode,null);
 
-        promise.reject(Error.veRESTError, errorMessage, map);
+        promise.reject(errorCode, errorMessage, map);
     }
 
     public void reject401(String op, Promise promise)
     {
         VLog.e(TAG, "REJECT401: op=" + op);
 
-        WritableMap map = Arguments.createMap();
         String errorMessage = "Access Token Invalid";
-        map.putString("errorMsg", errorMessage);
-        map.putInt("httpStatus", 401);
+        WritableMap map = computeError("vantiq.auth.invalid",errorMessage,401,null);
 
         promise.reject(Error.veNotAuthorized, errorMessage, map);
+    }
+
+    public void rejectErrorObject(String op, JsonObject error, Promise promise)
+    {
+        VLog.e(TAG, "REJECTERROR1: op=" + op);
+
+        String errorMsg =  error.get("errorMsg").getAsString();
+        String errorCode =  error.get("errorCode").getAsString();
+        int httpStatus = error.get("httpStatus").getAsInt();
+
+        WritableMap wm = Arguments.createMap();
+
+        wm.putString("errorCode", errorCode);
+        wm.putString("errorMsg", errorMsg);
+        wm.putInt("httpStatus", httpStatus);
+
+        promise.reject(errorCode, errorMsg, wm);
     }
 
     //
@@ -230,89 +241,764 @@ public class Database
         return wa;
     }
 
-    public void selectOne(String type, String id, Promise promise)
+    private Object convertJsonElementToReturnable(JsonElement je)
     {
-        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-        Account a = val.account;
-
-        Vantiq vantiqSDK = new Vantiq(a.getServer());
-        vantiqSDK.setAccessToken(a.getAccessToken());
-        vantiqSDK.setUsername(a.getUsername());
-
-        VantiqResponse vr = null;
-        Exception theException = null;
-
-        try
+        if (je == null)
         {
-            vr = vantiqSDK.selectOne(type, id);
+            return null;
         }
-        catch (Exception ex)
+        else if (je instanceof JsonPrimitive)
         {
-            theException = ex;
-        }
+            JsonPrimitive jp = (JsonPrimitive) je;
 
-        if (theException != null)
-        {
-            this.rejectException("selectOne",theException, promise);
-        }
-        else if (vr.hasException())
-        {
-            this.rejectException("selectOne",vr.getException(), promise);
-        }
-        //
-        //  We don't really know or care why this request failed, just that it did. Keep trying with
-        //  other users in the same namespace until we find one that works.
-        //
-        else if (vr.isSuccess())
-        {
-            Object body = vr.getBody();
-            WritableArray wa = null;
-
-            if (body instanceof JsonArray)
+            if (jp.isBoolean())
             {
-                JsonArray ja = (JsonArray) body;
-                wa = convertToWritableArray(ja);
+                return jp.getAsBoolean();
             }
-            else if  (body instanceof JsonObject)
+            else if (jp.isNumber())
             {
-                JsonObject jo = (JsonObject) body;
-                wa = Arguments.createArray();
-                if (body != null)
+                return jp.getAsNumber();
+            }
+            else if (jp.isString())
+            {
+                return jp.getAsString();
+            }
+            else
+            {
+                return jp.getAsString();
+            }
+        }
+        else if (je instanceof JsonObject)
+        {
+            return this.convertToWritableMap((JsonObject) je);
+        }
+        else if (je instanceof JsonArray)
+        {
+            return this.convertToWritableArray((JsonArray) je);
+        }
+
+        return null;
+    }
+
+    static private WritableMap computeError(String code, String message, int statusCode, String errorBodyAsString)
+    {
+        String fullMessage = message;
+
+        if (errorBodyAsString != null)
+        {
+            try
+            {
+                JsonElement je = new JsonParser().parse(errorBodyAsString);
+
+                if (je.isJsonArray())
                 {
-                    WritableMap map = convertToWritableMap(jo);
-                    wa.pushMap(map);
+                    JsonArray ja = (JsonArray) je;
+
+                    if (ja.size() > 0)
+                    {
+                        JsonElement errJE = ja.get(0);
+
+                        if (errJE.isJsonObject())
+                        {
+                            JsonObject errJO = errJE.getAsJsonObject();
+
+                            code = errJO.get("code").getAsString();
+                            fullMessage += " - " + errJO.get("message").getAsString();
+                        }
+                    }
                 }
             }
-
-            promise.resolve(wa);
-        }
-        else if (vr.getStatusCode() == 401)
-        {
-            this.reject401("selectOne",promise);
-        }
-        else
-        {
-            List<VantiqError> ves = vr.getErrors();
-            for (int k = 0; k < ves.size(); k++)
+            catch (JsonSyntaxException e)
             {
-                VantiqError ve = ves.get(k);
-                this.rejectVantiqError("selectOne",ve,promise);
-                break;
+                throw new RuntimeException(e);
             }
         }
+        WritableMap wm = Arguments.createMap();
+
+        wm.putString("errorCode", code);
+        wm.putString("errorMsg", fullMessage);
+        wm.putInt("httpStatus", statusCode);
+
+        return wm;
+    }
+
+    private void sendEvent(ReactContext reactContext,
+                           String eventName,
+                           WritableMap params) {
+        reactContext
+                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                .emit(eventName, params);
+    }
+
+    //
+    //
+    //  Public methods start here
+    //
+    public void count(String type, ReadableMap where, Promise promise)
+    {
+        JsonObject whereObject = null;
+
+        //
+        //  Turn the "where" parameter into a JsonObject
+        //
+        if (where != null)
+        {
+            whereObject = this.convertToObject("count","where",where,promise);
+
+            if (whereObject == null)
+            {
+                return;
+            }
+        }
+
+        Utilities.count(type, whereObject, new Utilities.ResponseListener()
+        {
+            @Override
+            public void resolve(Object result)
+            {
+                Integer count = (Integer) result;
+                VLog.i(TAG, "Items returned: " + count.intValue());
+                promise.resolve(count.doubleValue());
+            }
+
+            @Override
+            public void reject(JsonObject error)
+            {
+                rejectErrorObject("count",error,promise);
+            }
+        });
+
     }
 
 
 
-    public void select(String type, ReadableArray props, ReadableMap where, ReadableMap sort, double limit, Promise promise)
+
+
+
+    public void createInternalUser(String username, String password, String email, String firstName, String lastName, String phone, Promise promise)
     {
+        String procedureName = "Registration.createInternalUser";
+
         VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         Account a = val.account;
 
-        Vantiq vantiqSDK = new Vantiq(a.getServer());
-        vantiqSDK.setAccessToken(a.getAccessToken());
-        vantiqSDK.setUsername(a.getUsername());
+        //
+        //  Turn the "params" parameter into a JsonObject
+        //;
+        JsonObject paramsAsObject = new JsonObject();
+        JsonObject obj = new JsonObject();
+        paramsAsObject.add("obj", obj);
+        if (username != null) obj.addProperty("username", username);
+        if (password != null) obj.addProperty("password", password);
+        if (email != null) obj.addProperty("email", email);
+        if (firstName != null) obj.addProperty("firstName", firstName);
+        if (lastName != null) obj.addProperty("lastName", lastName);
+        if (phone != null) obj.addProperty("phone", phone);
 
+
+        Utilities.executePublic(a.getNamespace(), procedureName, paramsAsObject, new Utilities.ResponseListener()  {
+            @Override
+            public void resolve(Object obj)
+            {
+                JsonObject jo = (JsonObject) obj;
+
+                if (jo.get("insertSuccessful").getAsBoolean())
+                {
+                    promise.resolve(true);
+                }
+                else
+                {
+                    JsonObject errorObject = jo.get("error").getAsJsonObject();
+                    String errorCode = errorObject.get("code").getAsString();
+                    String errorMessage = errorObject.get("message").getAsString();
+
+                    VLog.e(TAG, "REJECT ERROR: op=" + "createInternalUser" + " code=" + errorCode + " msg=" + errorMessage);
+
+                    WritableMap map = computeError(errorCode, errorMessage, 0, null);
+                    promise.reject(errorCode, errorMessage, map);
+
+                    promise.reject(Error.veRESTError, errorMessage, map);
+                }
+            }
+
+            @Override
+            public void reject(JsonObject jo)
+            {
+                JsonObject errorObject = jo;
+                String errorCode = errorObject.get("errorCode").getAsString();
+                String errorMessage = errorObject.get("errorMsg").getAsString();
+
+                VLog.e(TAG, "REJECT ERROR: op=" + "createInternalUser" + " code=" + errorCode + " msg=" + errorMessage);
+
+                WritableMap map = computeError(errorCode, errorMessage, 0, null);
+                promise.reject(errorCode, errorMessage, map);
+            }
+        });
+    }
+
+
+    public void createOAuthUser(String redirectUrl, String clientId, Promise promise)
+    {
+        String procedureName = "Registration.createDRPCode";
+
+        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+        Account a = val.account;
+
+        //
+        //  Turn the "params" parameter into a JsonObject
+        //
+        JsonObject paramsAsObject = new JsonObject();
+
+        Utilities.executePublic(a.getNamespace(), procedureName, paramsAsObject, new Utilities.ResponseListener()
+        {
+            @Override
+            public void resolve(Object obj)
+            {
+                JsonElement je = (JsonElement) obj;
+                boolean failed = true;
+
+                if (je.isJsonPrimitive())
+                {
+                    JsonPrimitive jp = je.getAsJsonPrimitive();
+
+                    if (jp.isString())
+                    {
+                        failed = false;
+                        String drpCode = jp.getAsString();
+
+                        VLog.i(TAG, "drpCode=" + drpCode);
+
+                        //
+                        //  Use OauthLoginActivity to register the user
+                        //
+                        VantiqReactModule vrm = VantiqReactModule.INSTANCE;
+
+                        Utilities.registerWithOAuth(vrm.getActivity(), redirectUrl, clientId, drpCode, new Utilities.ResponseListener()
+                        {
+                            @Override
+                            public void resolve(Object o)
+                            {
+                                Account a = VantiqAndroidLibrary.INSTANCE.account;
+
+                                WritableMap map = Arguments.createMap();
+                                map.putString("server", a.getServer());
+                                map.putString("userId", a.getHRusername());
+                                map.putString("username", a.getUsername());
+                                map.putString("serverType", a.getAuthType());
+                                map.putString("errorStr", a.getErrorMessage());
+                                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
+                                map.putInt("httpStatus", 0);
+                                promise.resolve(map);
+                            }
+
+                            @Override
+                            public void reject(JsonObject jsonObject)
+                            {
+                                Account a = VantiqAndroidLibrary.INSTANCE.account;
+
+                                WritableMap map = Arguments.createMap();
+                                map.putString("server", a.getServer());
+                                map.putString("userId", a.getHRusername());
+                                map.putString("username", a.getUsername());
+                                map.putString("serverType", a.getAuthType());
+                                map.putString("errorStr", a.getErrorMessage());
+                                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
+                                map.putInt("httpStatus", 0);
+                                map.putString("errorMsg", Error.VALIDATIONFAILED);
+                                promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
+                            }
+                        });
+                    }
+                }
+
+                if (failed)
+                {
+                    String errorCode = "drp.invalid.response";
+                    String errorMessage = "Invalid response";
+
+                    VLog.e(TAG, "REJECT ERROR: op=" + "createOAuthUser" + " code=" + errorCode + " msg=" + errorMessage);
+
+                    WritableMap map = computeError(errorCode, errorMessage, 0, null);
+                    promise.reject(errorCode, errorMessage, map);
+                }
+
+            }
+
+            @Override
+            public void reject(JsonObject error)
+            {
+                rejectErrorObject("createOAuthUser",error,promise);
+            }
+        });
+
+
+    }
+
+    public void delete(String type, ReadableMap where, Promise promise)
+    {
+        JsonObject whereObject = null;
+
+        //
+        //  Turn the "where" parameter into a JsonObject
+        //
+        if (where != null)
+        {
+            whereObject = this.convertToObject("delete","where",where,promise);
+
+            if (whereObject == null)
+            {
+                return;
+            }
+        }
+
+        Utilities.delete(type, whereObject, new Utilities.ResponseListener()
+        {
+            @Override
+            public void resolve(Object result)
+            {
+                promise.resolve(true);
+            }
+
+            @Override
+            public void reject(JsonObject error)
+            {
+                rejectErrorObject("delete",error,promise);
+            }
+        });
+   }
+
+    public void deleteOne(String type, String id, Promise promise)
+    {
+
+        Utilities.deleteOne(type, id, new Utilities.ResponseListener()
+        {
+            @Override
+            public void resolve(Object result)
+            {
+                promise.resolve(true);
+            }
+
+            @Override
+            public void reject(JsonObject error)
+            {
+                rejectErrorObject("delete",error,promise);
+            }
+        });
+    }
+
+    private void execute(String procedureName, JsonElement params, Promise promise)
+    {
+
+        Utilities.execute(procedureName, params, new Utilities.ResponseListener()
+        {
+            @Override
+            public void resolve(Object result)
+            {
+                JsonElement je = (JsonElement) result;
+
+                if (je instanceof JsonPrimitive)
+                {
+                    JsonPrimitive jp = (JsonPrimitive) je;
+
+                    if (jp.isBoolean())
+                    {
+                        promise.resolve(jp.getAsBoolean());
+                    }
+                    else if (jp.isNumber())
+                    {
+                        Number n = jp.getAsNumber();
+                        promise.resolve(n.doubleValue());
+                    }
+                    else if (jp.isString())
+                    {
+                        promise.resolve(jp.getAsString());
+                    }
+                    else
+                    {
+                        promise.resolve(jp.getAsString());
+                    }
+                }
+                else  if (je instanceof JsonObject)
+                {
+                    WritableMap wm = (WritableMap) convertJsonElementToReturnable(je);
+                    promise.resolve(wm);
+                }
+                else if (je instanceof JsonArray)
+                {
+                    WritableArray wa = (WritableArray) convertJsonElementToReturnable(je);
+                    promise.resolve(wa);
+                }
+                else
+                {
+                    promise.resolve(null);
+                }
+            }
+
+            @Override
+            public void reject(JsonObject error)
+            {
+                rejectErrorObject("execute",error,promise);
+            }
+        });
+    }
+
+    public void executeByName(String procedureName, ReadableMap paramsMap, Promise promise)
+    {
+        //
+        //  Turn the "params" parameter into a JsonObject
+        //;
+        JsonObject paramsAsObject = this.convertToObject("executeByName","params",paramsMap,promise);
+
+        this.execute(procedureName, paramsAsObject, promise);
+    }
+
+    public void executeByPosition(String procedureName, ReadableArray paramsArray, Promise promise)
+    {
+        //
+        //  Turn the "params" parameter into a JsonArray
+        //
+        JsonArray paramsAsArray =  this.convertToArray("executeByPosition", "params", paramsArray, promise);
+
+        this.execute(procedureName, paramsAsArray, promise);
+    }
+
+    private void executePublic(String namespace, String procedureName, JsonElement params, Promise promise)
+    {
+        Utilities.executePublic(namespace, procedureName, params, new Utilities.ResponseListener()
+        {
+            @Override
+            public void resolve(Object result)
+            {
+                JsonElement je = (JsonElement) result;
+
+                if (je instanceof JsonPrimitive)
+                {
+                    JsonPrimitive jp = (JsonPrimitive) je;
+
+                    if (jp.isBoolean())
+                    {
+                        promise.resolve(jp.getAsBoolean());
+                    }
+                    else if (jp.isNumber())
+                    {
+                        Number n = jp.getAsNumber();
+                        promise.resolve(n.doubleValue());
+                    }
+                    else if (jp.isString())
+                    {
+                        promise.resolve(jp.getAsString());
+                    }
+                    else
+                    {
+                        promise.resolve(jp.getAsString());
+                    }
+                }
+                else  if (je instanceof JsonObject)
+                {
+                    WritableMap wm = (WritableMap) convertJsonElementToReturnable(je);
+                    promise.resolve(wm);
+                }
+                else if (je instanceof JsonArray)
+                {
+                    WritableArray wa = (WritableArray) convertJsonElementToReturnable(je);
+                    promise.resolve(wa);
+                }
+                else
+                {
+                    promise.resolve(null);
+                }
+            }
+
+            @Override
+            public void reject(JsonObject error)
+            {
+                rejectErrorObject("execute",error,promise);
+            }
+        });
+    }
+
+    public void executePublicByName(String namespace, String procedureName, ReadableMap paramsMap, Promise promise)
+    {
+        //
+        //  Turn the "params" parameter into a JsonObject
+        //;
+        JsonObject paramsAsObject = this.convertToObject("executeByName","params",paramsMap,promise);
+
+        this.executePublic(namespace, procedureName, paramsAsObject, promise);
+    }
+
+    public void executePublicByPosition(String namespace, String procedureName, ReadableArray paramsArray, Promise promise)
+    {
+        //
+        //  Turn the "params" parameter into a JsonArray
+        //
+        JsonArray paramsAsArray =  this.convertToArray("executePublicByPosition", "params", paramsArray, promise);
+
+        this.executePublic(namespace,procedureName, paramsAsArray, promise);
+    }
+
+    public void executeStreamedByName(String procedureName, ReadableMap paramsMap, String progressEvent, Double maxBufferSize, Double maxFlushInterval, Promise promise)
+    {
+        //
+        //  Turn the "params" parameter into a JsonObject
+        //;
+        JsonObject paramsAsObject = this.convertToObject("executeByName","params",paramsMap,promise);
+
+        Integer effMmaxBufferSize = null;
+        Long effMaxFlushInterval = null;;
+
+        if (maxBufferSize != null)
+        {
+            effMmaxBufferSize = Integer.valueOf(maxBufferSize.intValue());
+        }
+        if (maxFlushInterval != null)
+        {
+            effMaxFlushInterval = Long.valueOf(maxFlushInterval.longValue());
+        }
+
+        Utilities.executeStreamed(procedureName, paramsAsObject, effMmaxBufferSize,effMaxFlushInterval, new Utilities.GenericCallback()
+        {
+            @Override
+            public void invoke(Object obj)
+            {
+                if (progressEvent != null)
+                {
+                    //VLog.i(TAG, "PROGRESS EVENT: " + progressEvent);
+                    JsonElement je = (JsonElement) obj;
+                    sendEvent(VantiqReactModule.INSTANCE.reactContext, progressEvent, (WritableMap) convertJsonElementToReturnable(je));
+                }
+            }
+        }, new Utilities.ResponseListener()
+        {
+            @Override
+            public void resolve(Object obj)
+            {
+                //VLog.i(TAG, "DONE");
+                JsonElement je = (JsonElement) obj;
+                promise.resolve(convertJsonElementToReturnable(je));
+            }
+
+            @Override
+            public void reject(JsonObject jsonObject)
+            {
+                JsonObject errors = jsonObject.getAsJsonObject("errors");
+                rejectErrorObject("executeStreamedByName",errors,promise);
+
+            }
+        });
+    }
+
+    public void executeStreamedByPosition(String procedureName, ReadableArray paramsArray, String progressEvent, Double maxBufferSize, Double maxFlushInterval, Promise promise)
+    {
+        //
+        //  Turn the "params" parameter into a JsonArray
+        //
+        JsonArray paramsAsArray =  this.convertToArray("executeByPosition", "params", paramsArray, promise);
+
+        Integer effMmaxBufferSize = null;
+        Long effMaxFlushInterval = null;;
+
+        if (maxBufferSize != null)
+        {
+            effMmaxBufferSize = Integer.valueOf(maxBufferSize.intValue());
+        }
+        if (maxFlushInterval != null)
+        {
+            effMaxFlushInterval = Long.valueOf(maxFlushInterval.longValue());
+        }
+
+        Utilities.executeStreamed(procedureName, paramsAsArray, effMmaxBufferSize, effMaxFlushInterval, new Utilities.GenericCallback()
+        {
+            @Override
+            public void invoke(Object obj)
+            {
+                if (progressEvent != null)
+                {
+                    //VLog.i(TAG, "PROGRESS EVENT: " + progressEvent);
+                    JsonElement je = (JsonElement) obj;
+                    sendEvent(VantiqReactModule.INSTANCE.reactContext, progressEvent, (WritableMap) convertJsonElementToReturnable(je));
+                }
+            }
+        },
+        new Utilities.ResponseListener()
+        {
+            @Override
+            public void resolve(Object obj)
+            {
+                //VLog.i(TAG, "DONE");
+                JsonElement je = (JsonElement) obj;
+                promise.resolve(convertJsonElementToReturnable(je));
+            }
+
+            @Override
+            public void reject(JsonObject jsonObject)
+            {
+                JsonObject errors = jsonObject.getAsJsonObject("errors");
+                rejectErrorObject("executeStreamedByPosition",errors,promise);
+            }
+        });
+    }
+
+
+    public void insert(String type, ReadableMap object, Promise promise)
+    {
+        JsonObject objectToInsert = null;
+
+        //
+        //  Turn the "object" parameter into a JsonObject
+        //
+        if (object != null)
+        {
+            objectToInsert = this.convertToObject("insert","object",object,promise);
+
+            if (objectToInsert == null)
+            {
+                return;
+            }
+        }
+
+        Utilities.insert(type, objectToInsert, new Utilities.ResponseListener()
+        {
+            @Override
+            public void resolve(Object result)
+            {
+                JsonObject jo = (JsonObject) result;
+                promise.resolve((WritableMap) convertJsonElementToReturnable(jo));
+            }
+
+            @Override
+            public void reject(JsonObject error)
+            {
+                rejectErrorObject("insert",error,promise);
+            }
+        });
+    }
+
+    public void publish(String topic, ReadableMap message, Promise promise)
+    {
+        JsonObject messageObject = null;
+
+        //
+        //  Turn the "object" parameter into a JsonObject
+        //
+        if (message != null)
+        {
+            messageObject = this.convertToObject("publish","message",message,promise);
+
+            if (messageObject == null)
+            {
+                return;
+            }
+        }
+
+        Utilities.publish(topic, messageObject, new Utilities.ResponseListener()
+        {
+            @Override
+            public void resolve(Object result)
+            {
+                promise.resolve(true);
+            }
+
+            @Override
+            public void reject(JsonObject error)
+            {
+                rejectErrorObject("publish",error,promise);
+            }
+        });
+
+    }
+
+    public void publishEvent(String resource, String resourceId, ReadableMap message, Promise promise)
+    {
+        JsonObject messageObject = null;
+
+        //
+        //  Turn the "object" parameter into a JsonObject
+        //
+        if (message != null)
+        {
+            messageObject = this.convertToObject("publishEvent","message",message,promise);
+
+            if (messageObject == null)
+            {
+                return;
+            }
+        }
+
+        Utilities.publishEvent(resource, resourceId, messageObject, new Utilities.ResponseListener()
+        {
+            @Override
+            public void resolve(Object result)
+            {
+                promise.resolve(true);
+            }
+
+            @Override
+            public void reject(JsonObject error)
+            {
+                rejectErrorObject("publishEvent",error,promise);
+            }
+        });
+    }
+
+
+    public void registerForPushNotifications(Activity activity, Promise promise)
+    {
+        Utilities.registerForPushNotifications(activity, new Utilities.GenericCallback()
+        {
+            @Override
+            public void invoke(Object obj)
+            {
+                JsonElement je = (JsonElement) obj;
+                sendEvent(VantiqReactModule.INSTANCE.reactContext, "pushNotification", (WritableMap) convertJsonElementToReturnable(je));
+            }
+        },
+        new Utilities.ResponseListener()
+        {
+            @Override
+            public void resolve(Object result)
+            {
+                //JsonArray ja = (JsonArray) result;
+                promise.resolve(true);
+            }
+
+            @Override
+            public void reject(JsonObject error)
+            {
+                rejectErrorObject("registerForPushNotifications",error,promise);
+            }
+        });
+    }
+
+    public void registerSupportedEvents(ReadableArray eventNames, Promise promise)
+    {
+        ArrayList eventNamesArray = null;
+
+        if (eventNames != null)
+        {
+            eventNamesArray = eventNames.toArrayList();
+        }
+
+        Utilities.registerSupportedEvents(eventNamesArray, new Utilities.ResponseListener()
+        {
+            @Override
+            public void resolve(Object result)
+            {
+                //JsonArray ja = (JsonArray) result;
+                promise.resolve(true);
+            }
+
+            @Override
+            public void reject(JsonObject error)
+            {
+                rejectErrorObject("registerSupportedEvents",error,promise);
+            }
+        });
+    }
+
+
+    public void select(String type, ReadableArray props, ReadableMap where, ReadableMap sort, double limit, Promise promise)
+    {
         ArrayList propsArray = null;
 
         if (props != null)
@@ -365,200 +1051,48 @@ public class Database
             }
         }
 
-        VantiqResponse vr = null;
-        Exception theException = null;
-
-        try
+        Utilities.select(type, propsArray, whereObject, sortSpec, limit, new Utilities.ResponseListener()
         {
-            vr = vantiqSDK.select(type, propsArray, whereObject, sortSpec, (long) limit);
-        }
-        catch (Exception ex)
-        {
-            theException = ex;
-        }
-
-        if (theException != null)
-        {
-            this.rejectException("select",theException, promise);
-        }
-        else if (vr.hasException())
-        {
-            this.rejectException("select",vr.getException(), promise);
-        }
-        else if (vr.isSuccess())
-        {
-            Object body = vr.getBody();
-            List<JsonObject> results = (List<JsonObject>) body;
-
-            VLog.i(TAG, "Items returned: " + results.size());
-            WritableArray wa = Arguments.createArray();
-
-            for (int i = 0; i < results.size(); i++)
+            @Override
+            public void resolve(Object result)
             {
-                JsonObject jo = results.get(i);
-                wa.pushMap(this.convertToWritableMap(jo));
+                JsonArray ja = (JsonArray) result;
+
+                WritableArray wa = (WritableArray)convertJsonElementToReturnable(ja);
+                promise.resolve(wa);
             }
-            promise.resolve(wa);
-        }
-        else if (vr.getStatusCode() == 401)
-        {
-            this.reject401("select",promise);
-        }
-        else
-        {
-            List<VantiqError> ves = vr.getErrors();
-            for (int k = 0; k < ves.size(); k++)
+
+            @Override
+            public void reject(JsonObject error)
             {
-                VantiqError ve = ves.get(k);
-                this.rejectVantiqError("select",ve,promise);
-                break;
+                rejectErrorObject("select",error,promise);
             }
-        }
+        });
     }
 
-
-    public void count(String type, ReadableMap where, Promise promise)
+    public void selectOne(String type, String id, Promise promise)
     {
-        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-        Account a = val.account;
-
-        Vantiq vantiqSDK = new Vantiq(a.getServer());
-        vantiqSDK.setAccessToken(a.getAccessToken());
-        vantiqSDK.setUsername(a.getUsername());
-
-        JsonObject whereObject = null;
-
-        //
-        //  Turn the "where" parameter into a JsonObject
-        //
-        if (where != null)
+        Utilities.selectOne(type, id, new Utilities.ResponseListener()
         {
-            whereObject = this.convertToObject("count","where",where,promise);
-
-            if (whereObject == null)
+            @Override
+            public void resolve(Object result)
             {
-                return;
+                JsonArray ja = (JsonArray) result;
+
+                WritableArray wa = (WritableArray) convertJsonElementToReturnable(ja);
+                promise.resolve(wa);
             }
-        }
 
-        VantiqResponse vr = null;
-        Exception theException = null;
-
-        try
-        {
-            vr = vantiqSDK.count(type, whereObject);
-        }
-        catch (Exception ex)
-        {
-            theException = ex;
-        }
-
-        if (theException != null)
-        {
-            this.rejectException("count",theException, promise);
-        }
-        else if (vr.hasException())
-        {
-            this.rejectException("count",vr.getException(), promise);
-        }
-        else if (vr.isSuccess())
-        {
-            Object body = vr.getBody();
-            int count = ((Integer) body).intValue();
-            VLog.i(TAG, "Items returned: " + count);
-            promise.resolve(count);
-        }
-        else if (vr.getStatusCode() == 401)
-        {
-            this.reject401("count",promise);
-        }
-        else
-        {
-            List<VantiqError> ves = vr.getErrors();
-            for (int k = 0; k < ves.size(); k++)
+            @Override
+            public void reject(JsonObject error)
             {
-                VantiqError ve = ves.get(k);
-                this.rejectVantiqError("count",ve,promise);
-                break;
+                rejectErrorObject("selectOne", error, promise);
             }
-        }
-    }
-
-    public void insert(String type, ReadableMap object, Promise promise)
-    {
-        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-        Account a = val.account;
-
-        Vantiq vantiqSDK = new Vantiq(a.getServer());
-        vantiqSDK.setAccessToken(a.getAccessToken());
-        vantiqSDK.setUsername(a.getUsername());
-
-        JsonObject objectToInsert = null;
-
-        //
-        //  Turn the "object" parameter into a JsonObject
-        //
-        if (object != null)
-        {
-            objectToInsert = this.convertToObject("insert","object",object,promise);
-
-            if (objectToInsert == null)
-            {
-                return;
-            }
-        }
-
-        VantiqResponse vr = null;
-        Exception theException = null;
-
-        try
-        {
-            vr = vantiqSDK.insert(type, objectToInsert);
-        }
-        catch (Exception ex)
-        {
-            theException = ex;
-        }
-
-        if (theException != null)
-        {
-            this.rejectException("insert",theException, promise);
-        }
-        else if (vr.hasException())
-        {
-            this.rejectException("insert",vr.getException(), promise);
-        }
-        else if (vr.isSuccess())
-        {
-            Object body = vr.getBody();
-            JsonObject jo = (JsonObject) body;
-            promise.resolve(this.convertToWritableMap(jo));
-        }
-        else if (vr.getStatusCode() == 401)
-        {
-            this.reject401("insert",promise);
-        }
-        else
-        {
-            List<VantiqError> ves = vr.getErrors();
-            for (int k = 0; k < ves.size(); k++)
-            {
-                VantiqError ve = ves.get(k);
-                this.rejectVantiqError("insert",ve,promise);
-                break;
-            }
-        }
+        });
     }
 
     public void update(String type, String id, ReadableMap object, Promise promise)
     {
-        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-        Account a = val.account;
-
-        Vantiq vantiqSDK = new Vantiq(a.getServer());
-        vantiqSDK.setAccessToken(a.getAccessToken());
-        vantiqSDK.setUsername(a.getUsername());
-
         JsonObject objectToUpdate = null;
 
         //
@@ -574,846 +1108,62 @@ public class Database
             }
         }
 
-        VantiqResponse vr = null;
-        Exception theException = null;
-
-        try
+        Utilities.update(type, id, objectToUpdate, new Utilities.ResponseListener()
         {
-            vr = vantiqSDK.update(type, id, objectToUpdate);
-        }
-        catch (Exception ex)
-        {
-            theException = ex;
-        }
-
-        if (theException != null)
-        {
-            this.rejectException("update",theException, promise);
-        }
-        else if (vr.hasException())
-        {
-            this.rejectException("update",vr.getException(), promise);
-        }
-        else if (vr.isSuccess())
-        {
-            Object body = vr.getBody();
-            JsonObject jo = (JsonObject) body;
-            promise.resolve(this.convertToWritableMap(jo));
-        }
-        else if (vr.getStatusCode() == 401)
-        {
-            this.reject401("update",promise);
-        }
-        else
-        {
-            List<VantiqError> ves = vr.getErrors();
-            for (int k = 0; k < ves.size(); k++)
+            @Override
+            public void resolve(Object result)
             {
-                VantiqError ve = ves.get(k);
-                this.rejectVantiqError("update",ve,promise);
-                break;
+                JsonObject jo = (JsonObject) result;
+                promise.resolve((WritableMap) convertJsonElementToReturnable(jo));
             }
-        }
+
+            @Override
+            public void reject(JsonObject error)
+            {
+                rejectErrorObject("update",error,promise);
+            }
+        });
     }
 
     public void upsert(String type, ReadableMap object, Promise promise)
     {
-        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-        Account a = val.account;
-
-        Vantiq vantiqSDK = new Vantiq(a.getServer());
-        vantiqSDK.setAccessToken(a.getAccessToken());
-        vantiqSDK.setUsername(a.getUsername());
-
-        JsonObject objectToUpsert = null;
+        JsonObject objectToUpdate = null;
 
         //
         //  Turn the "object" parameter into a JsonObject
         //
         if (object != null)
         {
-            objectToUpsert = this.convertToObject("upsert","object",object,promise);
+            objectToUpdate = this.convertToObject("update","object",object,promise);
 
-            if (objectToUpsert == null)
+            if (objectToUpdate == null)
             {
                 return;
             }
         }
 
-        VantiqResponse vr = null;
-        Exception theException = null;
-
-        try
-        {
-            vr = vantiqSDK.upsert(type, objectToUpsert);
-        }
-        catch (Exception ex)
-        {
-            theException = ex;
-        }
-
-        if (theException != null)
-        {
-            this.rejectException("upsert",theException, promise);
-        }
-        else if (vr.hasException())
-        {
-            this.rejectException("upsert",vr.getException(), promise);
-        }
-        else if (vr.isSuccess())
-        {
-            Object body = vr.getBody();
-            JsonObject jo = (JsonObject) body;
-            promise.resolve(this.convertToWritableMap(jo));
-        }
-        else if (vr.getStatusCode() == 401)
-        {
-            this.reject401("upsert",promise);
-        }
-        else
-        {
-            List<VantiqError> ves = vr.getErrors();
-            for (int k = 0; k < ves.size(); k++)
-            {
-                VantiqError ve = ves.get(k);
-                this.rejectVantiqError("upsert",ve,promise);
-                break;
-            }
-        }
-    }
-
-    public void deleteOne(String type, String id, Promise promise)
-    {
-        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-        Account a = val.account;
-
-        Vantiq vantiqSDK = new Vantiq(a.getServer());
-        vantiqSDK.setAccessToken(a.getAccessToken());
-        vantiqSDK.setUsername(a.getUsername());
-
-        VantiqResponse vr = null;
-        Exception theException = null;
-
-        try
-        {
-            vr = vantiqSDK.deleteOne(type, id);
-        }
-        catch (Exception ex)
-        {
-            theException = ex;
-        }
-
-        if (theException != null)
-        {
-            this.rejectException("deleteOne",theException, promise);
-        }
-        else if (vr.hasException())
-        {
-            this.rejectException("deleteOne",vr.getException(), promise);
-        }
-        else if (vr.isSuccess())
-        {
-            promise.resolve(true);
-        }
-        else if (vr.getStatusCode() == 401)
-        {
-            this.reject401("deleteOne",promise);
-        }
-        else
-        {
-            List<VantiqError> ves = vr.getErrors();
-            for (int k = 0; k < ves.size(); k++)
-            {
-                VantiqError ve = ves.get(k);
-                this.rejectVantiqError("deleteOne",ve,promise);
-                break;
-            }
-        }
-    }
-
-    public void delete(String type, ReadableMap where, Promise promise)
-    {
-        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-        Account a = val.account;
-
-        Vantiq vantiqSDK = new Vantiq(a.getServer());
-        vantiqSDK.setAccessToken(a.getAccessToken());
-        vantiqSDK.setUsername(a.getUsername());
-
-        JsonObject whereObject = null;
-
-        //
-        //  Turn the "where" parameter into a JsonObject
-        //
-        if (where != null)
-        {
-            whereObject = this.convertToObject("delete","where",where,promise);
-
-            if (whereObject == null)
-            {
-                return;
-            }
-        }
-
-        VantiqResponse vr = null;
-        Exception theException = null;
-
-        try
-        {
-            vr = vantiqSDK.delete(type, whereObject);
-        }
-        catch (Exception ex)
-        {
-            theException = ex;
-        }
-
-        if (theException != null)
-        {
-            this.rejectException("delete",theException, promise);
-        }
-        else if (vr.hasException())
-        {
-            this.rejectException("delete",vr.getException(), promise);
-        }
-        else if (vr.isSuccess())
-        {
-            promise.resolve(true);
-        }
-        else if (vr.getStatusCode() == 401)
-        {
-            this.reject401("delete",promise);
-        }
-        else
-        {
-            List<VantiqError> ves = vr.getErrors();
-            for (int k = 0; k < ves.size(); k++)
-            {
-                VantiqError ve = ves.get(k);
-                this.rejectVantiqError("delete",ve,promise);
-                break;
-            }
-        }
-    }
-
-    public void executeByPosition(String procedureName, ReadableArray paramsArray, Promise promise)
-    {
-        //
-        //  Turn the "params" parameter into a JsonArray
-        //
-        JsonArray paramsAsArray =  this.convertToArray("executeByPosition", "params", paramsArray, promise);
-
-        this.execute(procedureName, paramsAsArray, promise);
-    }
-
-    public void executeByName(String procedureName, ReadableMap paramsMap, Promise promise)
-    {
-        //
-        //  Turn the "params" parameter into a JsonObject
-        //;
-        JsonObject paramsAsObject = this.convertToObject("executeByName","params",paramsMap,promise);
-
-        this.execute(procedureName, paramsAsObject, promise);
-    }
-
-    private Object convertJsonElementToReturnable(JsonElement je)
-    {
-        if (je == null)
-        {
-            return null;
-        }
-        else if (je instanceof JsonPrimitive)
-        {
-            JsonPrimitive jp = (JsonPrimitive) je;
-
-            if (jp.isBoolean())
-            {
-                return jp.getAsBoolean();
-            }
-            else if (jp.isNumber())
-            {
-                return jp.getAsNumber();
-            }
-            else if (jp.isString())
-            {
-                return jp.getAsString();
-            }
-            else
-            {
-                return jp.getAsString();
-            }
-        }
-        else if (je instanceof JsonObject)
-        {
-            return this.convertToWritableMap((JsonObject) je);
-        }
-        else if (je instanceof JsonArray)
-        {
-            return this.convertToWritableArray((JsonArray) je);
-        }
-
-        return null;
-    }
-
-
-    public void executeStreamedByPosition(String procedureName, ReadableArray paramsArray, String progressEvent, Promise promise)
-    {
-        //
-        //  Turn the "params" parameter into a JsonArray
-        //
-        JsonArray paramsAsArray =  this.convertToArray("executeByPosition", "params", paramsArray, promise);
-
-        Utilities.executeStreamed(procedureName, paramsAsArray, new Utilities.GenericCallback()
+        Utilities.upsert(type, objectToUpdate, new Utilities.ResponseListener()
         {
             @Override
-            public void invoke(Object obj)
+            public void resolve(Object result)
             {
-                if (progressEvent != null)
-                {
-                    JsonObject jo = (JsonObject) obj;
-                    VLog.i(TAG,jo.toString());
-                    sendEvent(VantiqReactModule.INSTANCE.reactContext, progressEvent, convertToWritableMap(jo));
-                }
+                JsonObject jo = (JsonObject) result;
+                promise.resolve((WritableMap) convertJsonElementToReturnable(jo));
             }
-        }, new Utilities.TaskListener()
-        {
-            @Override
-            public void onComplete(Object obj)
-            {
-                VLog.i(TAG, "DONE");
-                JsonElement je = (JsonElement) obj;
-                promise.resolve(convertJsonElementToReturnable(je));
-            }
-        });
-    }
 
-    public void executeStreamedByName(String procedureName, ReadableMap paramsMap, String progressEvent, Promise promise)
-    {
-        //
-        //  Turn the "params" parameter into a JsonObject
-        //;
-        JsonObject paramsAsObject = this.convertToObject("executeByName","params",paramsMap,promise);
-
-        Utilities.executeStreamed(procedureName, paramsAsObject, new Utilities.GenericCallback()
-        {
             @Override
-            public void invoke(Object obj)
+            public void reject(JsonObject error)
             {
-                if (progressEvent != null)
-                {
-                    JsonObject jo = (JsonObject) obj;
-                    VLog.i(TAG,jo.toString());
-                    sendEvent(VantiqReactModule.INSTANCE.reactContext, progressEvent, convertToWritableMap(jo));
-                }
-            }
-        }, new Utilities.TaskListener()
-        {
-            @Override
-            public void onComplete(Object obj)
-            {
-                VLog.i(TAG, "DONE");
-                JsonElement je = (JsonElement) obj;
-                promise.resolve(convertJsonElementToReturnable(je));
-
+                rejectErrorObject("upsert",error,promise);
             }
         });
     }
 
 
-    public void createOAuthUser(String redirectUrl, String clientId, Promise promise)
-    {
-        String procedureName = "Registration.createDRPCode";
 
-        //
-        //  Turn the "params" parameter into a JsonObject
-        //
-        JsonObject paramsAsObject = new JsonObject();
 
-        this.publicExecute("createOAuthUser",procedureName,paramsAsObject,promise,new Utilities.TaskListener(){
-            @Override
-            public void onComplete(Object obj)
-            {
-                JsonElement je = (JsonElement) obj;
-                boolean failed = true;
 
-                if (je.isJsonPrimitive())
-                {
-                    JsonPrimitive jp = je.getAsJsonPrimitive();
 
-                    if (jp.isString())
-                    {
-                        failed = false;
-                        String drpCode = jp.getAsString();
 
-                        VLog.i(TAG, "drpCode=" + drpCode);
 
-                        //
-                        //  Use OauthLoginActivity to register the user
-                        //
-                        VantiqReactModule vrm = VantiqReactModule.INSTANCE;
-
-                        Utilities.registerWithOAuth(vrm.getActivity(), redirectUrl, clientId, drpCode, new Utilities.TaskListener()
-                        {
-                            @Override
-                            public void onComplete(Object obj)
-                            {
-                                Account a = (Account) obj;
-
-                                if (a.getAccessToken() != null)
-                                {
-                                    WritableMap map = Arguments.createMap();
-                                    map.putString("server", a.getServer());
-                                    map.putString("userId", a.getHRusername());
-                                    map.putString("username", a.getUsername());
-                                    map.putString("serverType", a.getAuthType());
-                                    map.putString("errorStr", a.getErrorMessage());
-                                    map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
-                                    map.putInt("httpStatus", 0);
-                                    promise.resolve(map);
-                                }
-                                else
-                                {
-                                    WritableMap map = Arguments.createMap();
-                                    map.putString("server", a.getServer());
-                                    map.putString("userId", a.getHRusername());
-                                    map.putString("username", a.getUsername());
-                                    map.putString("serverType", a.getAuthType());
-                                    map.putString("errorStr", a.getErrorMessage());
-                                    map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
-                                    map.putInt("httpStatus", 0);
-                                    map.putString("errorMsg", Error.VALIDATIONFAILED);
-                                    promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
-                                }
-                            }
-                        });
-                    }
-                }
-
-                if (failed)
-                {
-                    String errorCode = "drp.invalid.response";
-                    String errorMessage = "Invalid response";
-
-                    VLog.e(TAG, "REJECT ERROR: op=" + "createOAuthUser" + " code=" + errorCode + " msg=" + errorMessage);
-
-                    WritableMap map = Arguments.createMap();
-                    map.putString("errorMsg", errorMessage);
-                    map.putString("errorCode", errorCode);
-
-                    promise.reject(Error.veRESTError, errorMessage, map);
-                }
-            }
-        });;
-    }
-
-    public void createInternalUser(String username, String password, String email, String firstName, String lastName, String phone, Promise promise)
-    {
-        String procedureName = "Registration.createInternalUser";
-
-        //
-        //  Turn the "params" parameter into a JsonObject
-        //;
-        JsonObject paramsAsObject = new JsonObject();
-        JsonObject obj = new JsonObject();
-        paramsAsObject.add("obj", obj);
-        if (username != null) obj.addProperty("username", username);
-        if (password != null) obj.addProperty("password", password);
-        if (email != null) obj.addProperty("email", email);
-        if (firstName != null) obj.addProperty("firstName", firstName);
-        if (lastName != null) obj.addProperty("lastName", lastName);
-        if (phone != null) obj.addProperty("phone", phone);
-
-        this.publicExecute("createInternalUser",procedureName,paramsAsObject,promise,new Utilities.TaskListener(){
-            @Override
-            public void onComplete(Object obj)
-            {
-                JsonObject jo = (JsonObject) obj;
-
-                if (jo.get("insertSuccessful").getAsBoolean())
-                {
-                    promise.resolve(true);
-                }
-                else
-                {
-                    JsonObject errorObject = jo.get("error").getAsJsonObject();
-                    String errorCode = errorObject.get("code").getAsString();
-                    String errorMessage = errorObject.get("message").getAsString();
-
-                    VLog.e(TAG, "REJECT ERROR: op=" + "createInternalUser" + " code=" + errorCode + " msg=" + errorMessage);
-
-                    WritableMap map = Arguments.createMap();
-                    map.putString("errorMsg", errorMessage);
-                    map.putString("errorCode", errorCode);
-
-                    promise.reject(Error.veRESTError, errorMessage, map);
-                }
-            }
-        });;
-    }
-
-    //
-    //  Execute a "public" Procedure without using any credentials. If the call fails we just reject the Promise;
-    //  otherwise callback the "listener" and let the caller handle the response.
-    //
-    private void publicExecute(String caller, String procedureName, JsonObject paramsAsObject, Promise promise, final Utilities.TaskListener listener)
-    {
-        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-        Account a = val.account;
-        String server = a.getServer();
-
-        String path = server + "/api/v1/resources/public/" + a.getNamespace() + "/" + Vantiq.SystemResources.PROCEDURES.value() + "/" + procedureName;
-
-        OkHttpClient client = new OkHttpClient();
-
-        String jsonAsString = paramsAsObject.toString();
-
-        MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-        RequestBody body = RequestBody.create(JSON, jsonAsString);
-        Request request = new Request.Builder()
-                .header("Cache-Control","no-cache")
-                .post(body)
-                .url(path)
-                .build();
-
-        Response response = null;
-        int statusCode = -1;
-        Exception theException = null;
-        ResponseBody rBody = null;
-        String responseBodyAsString = null;
-        JsonElement je = null;
-        JsonObject jo = null;
-        JsonArray ja = null;
-        JsonPrimitive jp = null;
-        JsonObject errorObject = null;
-
-        try
-        {
-            response = client.newCall(request).execute();
-            rBody = response.body();
-            responseBodyAsString = rBody.string();
-
-            statusCode = response.code();
-
-            je = JsonParser.parseString(responseBodyAsString);
-
-            if (je.isJsonObject())
-            {
-                jo = je.getAsJsonObject();
-            }
-            else if (je.isJsonArray())
-            {
-                ja = je.getAsJsonArray();
-
-                if (ja.size() > 0)
-                {
-                    errorObject = ja.get(0).getAsJsonObject();
-
-                }
-            }
-            else if (je.isJsonPrimitive())
-            {
-                jp = je.getAsJsonPrimitive();
-            }
-        }
-        catch (IOException e)
-        {
-            theException = e;
-        }
-
-        if (theException != null)
-        {
-            this.rejectException(caller,theException, promise);
-        }
-        else if (statusCode == 200)
-        {
-            if (errorObject != null)
-            {
-                String errorCode = errorObject.get("code").getAsString();
-                String errorMessage = errorObject.get("message").getAsString();
-
-                VLog.e(TAG, "REJECT ERROR: op=" + caller + " code=" + errorCode + " msg=" + errorMessage);
-
-                WritableMap map = Arguments.createMap();
-                map.putString("errorMsg", errorMessage);
-                map.putString("errorCode", errorCode);
-
-                promise.reject(Error.veRESTError, errorMessage, map);
-            }
-            else if (je != null)
-            {
-                listener.onComplete(je);
-            }
-        }
-        else if (statusCode == 401)
-        {
-            this.reject401(caller,promise);
-        }
-        else
-        {
-            if (errorObject != null)
-            {
-                String errorCode = errorObject.get("code").getAsString();
-                String errorMessage = errorObject.get("message").getAsString();
-
-                VLog.e(TAG, "REJECTVANTIQERROR: op=" + caller + " code=" + errorCode + " msg=" + errorMessage);
-
-                WritableMap map = Arguments.createMap();
-                map.putString("errorMsg", errorMessage);
-                map.putString("errorCode", errorCode);
-
-                promise.reject(Error.veRESTError, errorMessage, map);
-            }
-            else
-            {
-                String errorMessage = "No Error: Status code=" + statusCode;
-
-                WritableMap map = Arguments.createMap();
-                map.putString("errorMsg", errorMessage);
-
-                promise.reject(Error.veRESTError, errorMessage, map);
-            }
-        }
-    }
-
-    private void execute(String procedureName, Object paramsAsObject, Promise promise)
-    {
-        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-        Account a = val.account;
-
-        Vantiq vantiqSDK = new Vantiq(a.getServer());
-        vantiqSDK.setAccessToken(a.getAccessToken());
-        vantiqSDK.setUsername(a.getUsername());
-
-        VantiqResponse vr = null;
-        Exception theException = null;
-
-        try
-        {
-            vr = vantiqSDK.execute(procedureName, paramsAsObject);
-        }
-        catch (Exception ex)
-        {
-            theException = ex;
-        }
-
-        if (theException != null)
-        {
-            this.rejectException("execute",theException, promise);
-        }
-        else if (vr.hasException())
-        {
-            this.rejectException("execute",vr.getException(), promise);
-        }
-        else if (vr.isSuccess())
-        {
-            Object body = vr.getBody();
-            JsonElement je = (JsonElement) body;
-
-            if (je instanceof JsonPrimitive)
-            {
-                JsonPrimitive jp = (JsonPrimitive) je;
-
-                if (jp.isBoolean())
-                {
-                    promise.resolve(jp.getAsBoolean());
-                }
-                else if (jp.isNumber())
-                {
-                    Number n = jp.getAsNumber();
-                    promise.resolve(n.doubleValue());
-                }
-                else if (jp.isString())
-                {
-                    promise.resolve(jp.getAsString());
-                }
-                else
-                {
-                    promise.resolve(jp.getAsString());
-                }
-            }
-            else  if (je instanceof JsonObject)
-            {
-                WritableMap wm = this.convertToWritableMap((JsonObject) je);
-                promise.resolve(wm);
-            }
-            else if (je instanceof JsonArray)
-            {
-                WritableArray wa = this.convertToWritableArray((JsonArray) je);
-                promise.resolve(wa);
-            }
-            else
-            {
-                promise.resolve(null);
-            }
-        }
-        else if (vr.getStatusCode() == 401)
-        {
-            this.reject401("execute",promise);
-        }
-        else
-        {
-            List<VantiqError> ves = vr.getErrors();
-            for (int k = 0; k < ves.size(); k++)
-            {
-                VantiqError ve = ves.get(k);
-                this.rejectVantiqError("execute",ve,promise);
-                break;
-            }
-        }
-    }
-
-    public void publish(String topic, ReadableMap message, Promise promise)
-    {
-        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-        Account a = val.account;
-
-        Vantiq vantiqSDK = new Vantiq(a.getServer());
-        vantiqSDK.setAccessToken(a.getAccessToken());
-        vantiqSDK.setUsername(a.getUsername());
-
-        JsonObject messageObject = null;
-
-        //
-        //  Turn the "message" parameter into a JsonObject
-        //
-        if (message != null)
-        {
-            messageObject = this.convertToObject("publish","message",message,promise);
-
-            if (messageObject == null)
-            {
-                return;
-            }
-        }
-
-        VantiqResponse vr = null;
-        Exception theException = null;
-
-        try
-        {
-            vr = vantiqSDK.publish(Vantiq.SystemResources.TOPICS.value(), topic, messageObject);
-        }
-        catch (Exception ex)
-        {
-            theException = ex;
-        }
-
-        if (theException != null)
-        {
-            this.rejectException("publish",theException, promise);
-        }
-        else if (vr.hasException())
-        {
-            this.rejectException("publish",vr.getException(), promise);
-        }
-        else if (vr.isSuccess())
-        {
-            promise.resolve(true);
-        }
-        else if (vr.getStatusCode() == 401)
-        {
-            this.reject401("publish",promise);
-        }
-        else
-        {
-            List<VantiqError> ves = vr.getErrors();
-            for (int k = 0; k < ves.size(); k++)
-            {
-                VantiqError ve = ves.get(k);
-                this.rejectVantiqError("publish",ve,promise);
-                break;
-            }
-        }
-    }
-
-    public void publishEvent(String resource, String resourceId, ReadableMap message, Promise promise)
-    {
-        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-        Account a = val.account;
-
-        Vantiq vantiqSDK = new Vantiq(a.getServer());
-        vantiqSDK.setAccessToken(a.getAccessToken());
-        vantiqSDK.setUsername(a.getUsername());
-
-        JsonObject messageObject = null;
-
-        //
-        //  Turn the "message" parameter into a JsonObject
-        //
-        if (message != null)
-        {
-            messageObject = this.convertToObject("publishEvent","message",message,promise);
-
-            if (messageObject == null)
-            {
-                return;
-            }
-        }
-
-        VantiqResponse vr = null;
-        Exception theException = null;
-
-        try
-        {
-            vr = vantiqSDK.publish(resource, resourceId, messageObject);
-        }
-        catch (Exception ex)
-        {
-            theException = ex;
-        }
-
-        if (theException != null)
-        {
-            this.rejectException("publishEvent",theException, promise);
-        }
-        else if (vr.hasException())
-        {
-            this.rejectException("publishEvent",vr.getException(), promise);
-        }
-        else if (vr.isSuccess())
-        {
-            promise.resolve(true);
-        }
-        else if (vr.getStatusCode() == 401)
-        {
-            this.reject401("publishEvent",promise);
-        }
-        else
-        {
-            List<VantiqError> ves = vr.getErrors();
-            for (int k = 0; k < ves.size(); k++)
-            {
-                VantiqError ve = ves.get(k);
-                this.rejectVantiqError("publishEvent",ve,promise);
-                break;
-            }
-        }
-    }
-
-
-    private void sendEvent(ReactContext reactContext,
-                           String eventName,
-                           WritableMap params) {
-        reactContext
-                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit(eventName, params);
-    }
-
-    private int listenerCount = 0;
-
-    @ReactMethod
-    public void addListener(String eventName) {
-        if (listenerCount == 0) {
-            // Set up any upstream listeners or background tasks as necessary
-        }
-
-        listenerCount += 1;
-    }
-
-    @ReactMethod
-    public void removeListeners(Integer count) {
-        listenerCount -= count;
-        if (listenerCount == 0) {
-            // Remove upstream listeners, stop unnecessary background tasks
-        }
-    }
 }

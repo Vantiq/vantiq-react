@@ -87,12 +87,20 @@ export function executeByName(procedureName: string, params: any): Promise<strin
     return VantiqReact.executeByName(procedureName, params);
 }
 
-export function executeStreamedByPosition(procedureName: string, params: any[], progressEvent:string): Promise<string> {
-    return VantiqReact.executeStreamedByPosition(procedureName, params, progressEvent);
+export function executePublicByPosition(namespace:string, procedureName: string, params: any[]): Promise<string> {
+    return VantiqReact.executePublicByPosition(namespace,procedureName, params);
 }
 
-export function executeStreamedByName(procedureName: string, params: any, progressEvent:string): Promise<string> {
-    return VantiqReact.executeStreamedByName(procedureName, params, progressEvent);
+export function executePublicByName(namespace:string, procedureName: string, params: any): Promise<string> {
+    return VantiqReact.executePublicByName(namespace,procedureName, params);
+}
+
+export function executeStreamedByPosition(procedureName: string, params: any[], progressEvent:string, maxBufferSize:number=512, maxFlushInterval:number=5000): Promise<string> {
+    return VantiqReact.executeStreamedByPosition(procedureName, params, progressEvent, maxBufferSize, maxFlushInterval);
+}
+
+export function executeStreamedByName(procedureName: string, params: any, progressEvent:string, maxBufferSize:number=512, maxFlushInterval:number=5000): Promise<string> {
+    return VantiqReact.executeStreamedByName(procedureName, params, progressEvent, maxBufferSize, maxFlushInterval);
 }
 
 export function publish(topic: string, object: any): Promise<string> {

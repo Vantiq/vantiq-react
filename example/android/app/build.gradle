@@ -1,4 +1,5 @@
 apply plugin: "com.android.application"
+apply plugin: 'com.google.gms.google-services'  //   Firebase
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
@@ -124,5 +125,7 @@ dependencies {
         implementation jscFlavor
     }
 
-    implementation 'io.vantiq.androidlibrary:lib:1.0'
+    implementation 'io.vantiq:vantiq-ui-android:+'
+
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
 }

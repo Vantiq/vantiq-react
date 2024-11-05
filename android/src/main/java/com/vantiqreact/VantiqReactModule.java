@@ -2,6 +2,7 @@ package com.vantiqreact;
 
 import android.app.Activity;
 import com.facebook.react.bridge.*;
+import com.google.gson.JsonObject;
 import com.vantiqreact.misc.VLog;
 import io.vantiq.androidlib.Utilities;
 import io.vantiq.androidlib.VantiqAndroidLibrary;
@@ -53,13 +54,34 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     {
         VLog.i(TAG, "init Version " + VERSION);
 
-        Utilities.initialize(getReactApplicationContext(), server, namespace, new Utilities.TaskListener()
+        Utilities.initialize(getReactApplicationContext(), server, namespace, new Utilities.ResponseListener()
         {
-            public void onComplete(Object obj)
+            @Override
+            public void resolve(Object o)
             {
-                VLog.i(TAG, "init: onComplete");
+                VLog.i(TAG, "init: onResolve");
 
-                Account a = (Account) obj;
+                Account a = VantiqAndroidLibrary.INSTANCE.account;
+
+                WritableMap map = Arguments.createMap();
+                map.putString("server", a.getServer());
+                map.putString("userId", a.getHRusername());
+                map.putString("username", a.getUsername());
+                map.putString("password", a.getPassword());
+                map.putDouble("expiresAt", a.getExpiresAt());
+                map.putString("serverType", a.getAuthType());
+                map.putString("errorStr", a.getErrorMessage());
+                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
+                map.putInt("httpStatus", 0);
+                promise.resolve(map);
+            }
+
+            @Override
+            public void reject(JsonObject jsonObject)
+            {
+                VLog.i(TAG, "init: onResolve");
+
+                Account a = VantiqAndroidLibrary.INSTANCE.account;
 
                 WritableMap map = Arguments.createMap();
                 map.putString("server", a.getServer());
@@ -99,40 +121,41 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     {
         VLog.i(TAG, "authWithInternal");
 
-        Utilities.authWithInternal(username, password, new Utilities.TaskListener()
+        Utilities.authWithInternal(username, password, new Utilities.ResponseListener()
         {
             @Override
-            public void onComplete(Object obj)
+            public void resolve(Object o)
             {
-                Account a = (Account) obj;
+                Account a = VantiqAndroidLibrary.INSTANCE.account;
 
-                if (a.getAccessToken() != null)
-                {
-                    WritableMap map = Arguments.createMap();
-                    map.putString("server", a.getServer());
-                    map.putString("userId", a.getHRusername());
-                    map.putString("username", a.getUsername());
-                    map.putDouble("expiresAt", (double) a.getExpiresAt());
-                    map.putString("serverType", a.getAuthType());
-                    map.putString("errorStr", a.getErrorMessage());
-                    map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
-                    map.putInt("httpStatus", 0);
-                    promise.resolve(map);
-                }
-                else
-                {
-                    WritableMap map = Arguments.createMap();
-                    map.putString("server", a.getServer());
-                    map.putString("userId", a.getHRusername());
-                    map.putString("username", a.getUsername());
-                    map.putDouble("expiresAt", a.getExpiresAt());
-                    map.putString("serverType", a.getAuthType());
-                    map.putString("errorStr", a.getErrorMessage());
-                    map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
-                    map.putInt("httpStatus", 0);
-                    map.putString("errorMsg", Error.VALIDATIONFAILED);
-                    promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
-                }
+                WritableMap map = Arguments.createMap();
+                map.putString("server", a.getServer());
+                map.putString("userId", a.getHRusername());
+                map.putString("username", a.getUsername());
+                map.putDouble("expiresAt", (double) a.getExpiresAt());
+                map.putString("serverType", a.getAuthType());
+                map.putString("errorStr", a.getErrorMessage());
+                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
+                map.putInt("httpStatus", 0);
+                promise.resolve(map);
+            }
+
+            @Override
+            public void reject(JsonObject jsonObject)
+            {
+                Account a = VantiqAndroidLibrary.INSTANCE.account;
+
+                WritableMap map = Arguments.createMap();
+                map.putString("server", a.getServer());
+                map.putString("userId", a.getHRusername());
+                map.putString("username", a.getUsername());
+                map.putDouble("expiresAt", a.getExpiresAt());
+                map.putString("serverType", a.getAuthType());
+                map.putString("errorStr", a.getErrorMessage());
+                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
+                map.putInt("httpStatus", 0);
+                map.putString("errorMsg", Error.VALIDATIONFAILED);
+                promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
             }
         });
     }
@@ -141,38 +164,39 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     public void authWithOAuth(String urlScheme, String clientId, Promise promise)
     {
         VLog.i(TAG, "authWithOAuth");
-        Utilities.authWithOAuth(this.getActivity(), urlScheme, clientId, new Utilities.TaskListener()
+        Utilities.authWithOAuth(this.getActivity(), urlScheme, clientId, new Utilities.ResponseListener()
         {
             @Override
-            public void onComplete(Object obj)
+            public void resolve(Object o)
             {
-                Account a = (Account) obj;
+                Account a = VantiqAndroidLibrary.INSTANCE.account;
 
-                if (a.getAccessToken() != null)
-                {
-                    WritableMap map = Arguments.createMap();
-                    map.putString("server", a.getServer());
-                    map.putString("userId", a.getHRusername());
-                    map.putString("username", a.getUsername());
-                    map.putString("serverType", a.getAuthType());
-                    map.putString("errorStr", a.getErrorMessage());
-                    map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
-                    map.putInt("httpStatus", 0);
-                    promise.resolve(map);
-                }
-                else
-                {
-                    WritableMap map = Arguments.createMap();
-                    map.putString("server", a.getServer());
-                    map.putString("userId", a.getHRusername());
-                    map.putString("username", a.getUsername());
-                    map.putString("serverType", a.getAuthType());
-                    map.putString("errorStr", a.getErrorMessage());
-                    map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
-                    map.putInt("httpStatus", 0);
-                    map.putString("errorMsg", Error.VALIDATIONFAILED);
-                    promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
-                }
+                WritableMap map = Arguments.createMap();
+                map.putString("server", a.getServer());
+                map.putString("userId", a.getHRusername());
+                map.putString("username", a.getUsername());
+                map.putString("serverType", a.getAuthType());
+                map.putString("errorStr", a.getErrorMessage());
+                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
+                map.putInt("httpStatus", 0);
+                promise.resolve(map);
+            }
+
+            @Override
+            public void reject(JsonObject jsonObject)
+            {
+                Account a = VantiqAndroidLibrary.INSTANCE.account;
+
+                WritableMap map = Arguments.createMap();
+                map.putString("server", a.getServer());
+                map.putString("userId", a.getHRusername());
+                map.putString("username", a.getUsername());
+                map.putString("serverType", a.getAuthType());
+                map.putString("errorStr", a.getErrorMessage());
+                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
+                map.putInt("httpStatus", 0);
+                map.putString("errorMsg", Error.VALIDATIONFAILED);
+                promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
             }
         });
     }
@@ -182,38 +206,46 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     {
         VLog.i(TAG, "serverType");
 
-        Utilities.serverType( new Utilities.TaskListener()
+        Utilities.serverType( new Utilities.ResponseListener()
         {
             @Override
-            public void onComplete(Object obj)
+            public void resolve(Object o)
             {
-                Account a = (Account) obj;
+                VLog.i(TAG, "init: onResolve");
 
-                if (a.getAccessToken() != null)
-                {
-                    WritableMap map = Arguments.createMap();
-                    map.putString("server", a.getServer());
-                    map.putString("userId", a.getHRusername());
-                    map.putString("username", a.getUsername());
-                    map.putString("serverType", a.getAuthType());
-                    map.putString("errorStr", a.getErrorMessage());
-                    map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
-                    map.putInt("httpStatus", 0);
-                    promise.resolve(map);
-                }
-                else
-                {
-                    WritableMap map = Arguments.createMap();
-                    map.putString("server", a.getServer());
-                    map.putString("userId", a.getHRusername());
-                    map.putString("username", a.getUsername());
-                    map.putString("serverType", a.getAuthType());
-                    map.putString("errorStr", a.getErrorMessage());
-                    map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
-                    map.putInt("httpStatus", 0);
-                    map.putString("errorMsg", Error.VALIDATIONFAILED);
-                    promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
-                }
+                Account a = VantiqAndroidLibrary.INSTANCE.account;
+
+                WritableMap map = Arguments.createMap();
+                map.putString("server", a.getServer());
+                map.putString("userId", a.getHRusername());
+                map.putString("username", a.getUsername());
+                map.putString("password", a.getPassword());
+                map.putDouble("expiresAt", a.getExpiresAt());
+                map.putString("serverType", a.getAuthType());
+                map.putString("errorStr", a.getErrorMessage());
+                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
+                map.putInt("httpStatus", 0);
+                promise.resolve(map);
+            }
+
+            @Override
+            public void reject(JsonObject jsonObject)
+            {
+                VLog.i(TAG, "init: onResolve");
+
+                Account a = VantiqAndroidLibrary.INSTANCE.account;
+
+                WritableMap map = Arguments.createMap();
+                map.putString("server", a.getServer());
+                map.putString("userId", a.getHRusername());
+                map.putString("username", a.getUsername());
+                map.putString("password", a.getPassword());
+                map.putDouble("expiresAt", a.getExpiresAt());
+                map.putString("serverType", a.getAuthType());
+                map.putString("errorStr", a.getErrorMessage());
+                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
+                map.putInt("httpStatus", 0);
+                promise.resolve(map);
             }
         });
 
@@ -223,38 +255,38 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     public void verifyAuthToken(Promise promise)
     {
         VLog.i(TAG, "verifyAuthToken");
-        Utilities.refreshOAuthToken( new Utilities.TaskListener()
+        Utilities.refreshOAuthToken( new Utilities.ResponseListener()
         {
-            @Override
-            public void onComplete(Object obj)
-            {
-                Account a = (Account) obj;
 
-                if (a.getAccessToken() != null)
-                {
-                    WritableMap map = Arguments.createMap();
-                    map.putString("server", a.getServer());
-                    map.putString("userId", a.getHRusername());
-                    map.putString("username", a.getUsername());
-                    map.putString("serverType", a.getAuthType());
-                    map.putString("errorStr", a.getErrorMessage());
-                    map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
-                    map.putInt("httpStatus", 0);
-                    promise.resolve(map);
-                }
-                else
-                {
-                    WritableMap map = Arguments.createMap();
-                    map.putString("server", a.getServer());
-                    map.putString("userId", a.getHRusername());
-                    map.putString("username", a.getUsername());
-                    map.putString("serverType", a.getAuthType());
-                    map.putString("errorStr", a.getErrorMessage());
-                    map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
-                    map.putInt("httpStatus", 0);
-                    map.putString("errorMsg", Error.VALIDATIONFAILED);
-                    promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
-                }
+            @Override
+            public void resolve(Object o)
+            {
+                Account a = VantiqAndroidLibrary.INSTANCE.account;
+                WritableMap map = Arguments.createMap();
+                map.putString("server", a.getServer());
+                map.putString("userId", a.getHRusername());
+                map.putString("username", a.getUsername());
+                map.putString("serverType", a.getAuthType());
+                map.putString("errorStr", a.getErrorMessage());
+                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
+                map.putInt("httpStatus", 0);
+                promise.resolve(map);
+            }
+
+            @Override
+            public void reject(JsonObject jsonObject)
+            {
+                Account a = VantiqAndroidLibrary.INSTANCE.account;
+                WritableMap map = Arguments.createMap();
+                map.putString("server", a.getServer());
+                map.putString("userId", a.getHRusername());
+                map.putString("username", a.getUsername());
+                map.putString("serverType", a.getAuthType());
+                map.putString("errorStr", a.getErrorMessage());
+                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
+                map.putInt("httpStatus", 0);
+                map.putString("errorMsg", Error.VALIDATIONFAILED);
+                promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
             }
         });
     }
@@ -314,24 +346,24 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
                 {
                     VLog.i(TAG, "Revalidating with Internal '" + name + "' on " + Thread.currentThread().getName());
 
-                    Utilities.authWithInternal(a.getUsername(),a.getPassword(), new Utilities.TaskListener()
+                    Utilities.authWithInternal(a.getUsername(),a.getPassword(), new Utilities.ResponseListener()
                     {
                         @Override
-                        public void onComplete(Object obj)
+                        public void resolve(Object o)
                         {
-                            Account a = (Account) obj;
+                            Account a = VantiqAndroidLibrary.INSTANCE.account;
 
-                            if (a.getAccessToken() != null)
-                            {
-                                VLog.i(TAG, "RETRY - Running '" + name + "' on " + Thread.currentThread().getName());
-                                //rtrListener.onReadyToRun();
-                                runServerOperation(name + "", promise, rtrListener);
-                            }
-                            else
-                            {
-                                VLog.e(TAG, "New Access Token not acquired");
-                                db.reject(name, Error.veNotAuthorized, a.getErrorMessage(),promise);
-                            }
+                            VLog.i(TAG, "RETRY - Running '" + name + "' on " + Thread.currentThread().getName());
+                            runServerOperation(name + "", promise, rtrListener);
+                        }
+
+                        @Override
+                        public void reject(JsonObject jsonObject)
+                        {
+                            Account a = VantiqAndroidLibrary.INSTANCE.account;
+
+                            VLog.e(TAG, "New Access Token not acquired");
+                            db.reject(name, Error.veNotAuthorized, a.getErrorMessage(),promise);
                         }
                     });
                 }
@@ -339,24 +371,25 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
                 {
                     VLog.i(TAG, "Revalidating with OAuth '" + name + "' on " + Thread.currentThread().getName());
 
-                    Utilities.refreshOAuthToken(new Utilities.TaskListener()
+                    Utilities.refreshOAuthToken(new Utilities.ResponseListener()
                     {
-                        @Override
-                        public void onComplete(Object obj)
-                        {
-                            Account a = (Account) obj;
 
-                            if (a.getAccessToken() != null)
-                            {
-                                VLog.i(TAG, "RETRY - Running '" + name + "' on " + Thread.currentThread().getName());
-                                //rtrListener.onReadyToRun();
-                                runServerOperation(name, promise, rtrListener);
-                            }
-                            else
-                            {
-                                VLog.e(TAG, "Access Token Refresh Failed");
-                                db.reject(name, Error.veNotAuthorized, a.getErrorMessage(),promise);
-                            }
+                        @Override
+                        public void resolve(Object o)
+                        {
+                            Account a = VantiqAndroidLibrary.INSTANCE.account;
+
+                            VLog.i(TAG, "RETRY - Running '" + name + "' on " + Thread.currentThread().getName());
+                            //rtrListener.onReadyToRun();
+                            runServerOperation(name, promise, rtrListener);
+                        }
+
+                        @Override
+                        public void reject(JsonObject jsonObject)
+                        {
+                            Account a = VantiqAndroidLibrary.INSTANCE.account;
+                            VLog.e(TAG, "Access Token Refresh Failed");
+                            db.reject(name, Error.veNotAuthorized, a.getErrorMessage(), promise);
                         }
                     });
                 }
@@ -368,32 +401,54 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
         }).start();
     }
 
+    // Required for rn built in EventEmitter Calls.
+    private int listenerCount = 0;
 
     @ReactMethod
-    public void select(String type, ReadableArray props, ReadableMap where, ReadableMap sort, double limit, Promise promise)
+    public void addListener(String eventName) {
+        if (listenerCount == 0) {
+            // Set up any upstream listeners or background tasks as necessary
+        }
+
+        listenerCount += 1;
+    }
+
+    @ReactMethod
+    public void removeListeners(Integer count) {
+        listenerCount -= count;
+        if (listenerCount == 0) {
+            // Remove upstream listeners, stop unnecessary background tasks
+        }
+    }
+
+    @ReactMethod
+    public void registerForPushNotifications(Promise promise)
     {
-        this.runServerOperation("select", promise, new OnReadyToRunListener()
+        this.runServerOperation("registerForPushNotifications", promise, new OnReadyToRunListener()
         {
             @Override
             public void onReadyToRun()
             {
-                db.select(type, props, where, sort, limit, promise);
+                db.registerForPushNotifications(getActivity(),promise);
             }
         });
     }
 
     @ReactMethod
-    public void selectOne(String type, String id, Promise promise)
+    public void registerSupportedEvents(ReadableArray eventNames, Promise promise)
     {
-        this.runServerOperation("selectOne", promise, new OnReadyToRunListener()
+        this.runServerOperation("registerSupportedEvents", promise, new OnReadyToRunListener()
         {
             @Override
             public void onReadyToRun()
             {
-                db.selectOne(type, id, promise);
+                db.registerSupportedEvents(eventNames,promise);
             }
         });
     }
+
+
+
 
     @ReactMethod
     public void count(String type, ReadableMap where, Promise promise)
@@ -404,45 +459,6 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
             public void onReadyToRun()
             {
                 db.count(type, where, promise);
-            }
-        });
-    }
-
-    @ReactMethod
-    public void insert(String type, ReadableMap object, Promise promise)
-    {
-        this.runServerOperation("insert", promise, new OnReadyToRunListener()
-        {
-            @Override
-            public void onReadyToRun()
-            {
-                db.insert(type, object, promise);
-            }
-        });
-    }
-
-    @ReactMethod
-    public void update(String type, String id, ReadableMap object, Promise promise)
-    {
-        this.runServerOperation("update", promise, new OnReadyToRunListener()
-        {
-            @Override
-            public void onReadyToRun()
-            {
-                db.update(type, id, object, promise);
-            }
-        });
-    }
-
-    @ReactMethod
-    public void upsert(String type, ReadableMap object, Promise promise)
-    {
-        this.runServerOperation("upsert", promise, new OnReadyToRunListener()
-        {
-            @Override
-            public void onReadyToRun()
-            {
-                db.upsert(type, object, promise);
             }
         });
     }
@@ -473,21 +489,6 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
         });
     }
 
-    /*
-    @ReactMethod
-    public void execute(String procedureName, ReadableMap params, Promise promise)
-    {
-        this.runServerOperation("execute", promise, new OnReadyToRunListener()
-        {
-            @Override
-            public void onReadyToRun()
-            {
-                db.execute(procedureName, params, null, promise);
-            }
-        });
-    }
-    */
-
     @ReactMethod
     public void executeByPosition(String procedureName, ReadableArray params, Promise promise)
     {
@@ -514,29 +515,71 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     }
 
     @ReactMethod
-    public void executeStreamedByPosition(String procedureName, ReadableArray params, String progressEvent, Promise promise)
+    public void executePublicByPosition(String namespace, String procedureName, ReadableArray params, Promise promise)
     {
         this.runServerOperation("execute", promise, new OnReadyToRunListener()
         {
             @Override
             public void onReadyToRun()
             {
-                db.executeStreamedByPosition(procedureName, params, progressEvent, promise);
+                db.executePublicByPosition(namespace, procedureName, params, promise);
+            }
+        });
+    }
+
+    @ReactMethod
+    public void executePublicByName(String namespace, String procedureName, ReadableMap params, Promise promise)
+    {
+        this.runServerOperation("execute", promise, new OnReadyToRunListener()
+        {
+            @Override
+            public void onReadyToRun()
+            {
+                db.executePublicByName(namespace, procedureName, params, promise);
+            }
+        });
+    }
+
+
+    @ReactMethod
+    public void executeStreamedByPosition(String procedureName, ReadableArray params, String progressEvent, Double maxBufferSize, Double maxFlushInterval, Promise promise)
+    {
+        this.runServerOperation("execute", promise, new OnReadyToRunListener()
+        {
+            @Override
+            public void onReadyToRun()
+            {
+                db.executeStreamedByPosition(procedureName, params, progressEvent, maxBufferSize, maxFlushInterval, promise);
             }
         });
     }
     @ReactMethod
-    public void executeStreamedByName(String procedureName, ReadableMap params, String progressEvent, Promise promise)
+    public void executeStreamedByName(String procedureName, ReadableMap params, String progressEvent, Double maxBufferSize, Double maxFlushInterval, Promise promise)
     {
         this.runServerOperation("execute", promise, new OnReadyToRunListener()
         {
             @Override
             public void onReadyToRun()
             {
-                db.executeStreamedByName(procedureName, params, progressEvent, promise);
+                db.executeStreamedByName(procedureName, params, progressEvent, maxBufferSize, maxFlushInterval, promise);
             }
         });
     }
+
+
+    @ReactMethod
+    public void insert(String type, ReadableMap object, Promise promise)
+    {
+        this.runServerOperation("insert", promise, new OnReadyToRunListener()
+        {
+            @Override
+            public void onReadyToRun()
+            {
+                db.insert(type, object, promise);
+            }
+        });
+    }
+
 
     @ReactMethod
     public void publish(String topic, ReadableMap message, Promise promise)
@@ -567,6 +610,76 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
             }
         });
     }
+
+    @ReactMethod
+    public void select(String type, ReadableArray props, ReadableMap where, ReadableMap sort, double limit, Promise promise)
+    {
+        this.runServerOperation("select", promise, new OnReadyToRunListener()
+        {
+            @Override
+            public void onReadyToRun()
+            {
+                db.select(type, props, where, sort, limit, promise);
+            }
+        });
+    }
+
+    @ReactMethod
+    public void selectOne(String type, String id, Promise promise)
+    {
+        this.runServerOperation("selectOne", promise, new OnReadyToRunListener()
+        {
+            @Override
+            public void onReadyToRun()
+            {
+                db.selectOne(type, id, promise);
+            }
+        });
+    }
+
+    @ReactMethod
+    public void update(String type, String id, ReadableMap object, Promise promise)
+    {
+        this.runServerOperation("update", promise, new OnReadyToRunListener()
+        {
+            @Override
+            public void onReadyToRun()
+            {
+                db.update(type, id, object, promise);
+            }
+        });
+    }
+
+    @ReactMethod
+    public void upsert(String type, ReadableMap object, Promise promise)
+    {
+        this.runServerOperation("upsert", promise, new OnReadyToRunListener()
+        {
+            @Override
+            public void onReadyToRun()
+            {
+                db.upsert(type, object, promise);
+            }
+        });
+    }
+
+
+    /*
+    @ReactMethod
+    public void execute(String procedureName, ReadableMap params, Promise promise)
+    {
+        this.runServerOperation("execute", promise, new OnReadyToRunListener()
+        {
+            @Override
+            public void onReadyToRun()
+            {
+                db.execute(procedureName, params, null, promise);
+            }
+        });
+    }
+    */
+
+
 
     @ReactMethod
     public void createInternalUser(String username, String password, String email, String firstName, String lastName, String phone, Promise promise)

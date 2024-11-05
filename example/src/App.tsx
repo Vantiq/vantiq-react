@@ -3,20 +3,29 @@ import { NativeModules, StyleSheet, Pressable, Text, View, TextInput, ScrollView
 import { RootSiblingParent } from 'react-native-root-siblings';
 import {NativeEventEmitter} from 'react-native';
 
-import {init, authWithInternal, authWithOAuth, select, selectOne, count, createInternalUser, createOAuthUser,
-    insert, update, upsert, deleteOne, deleteWhere, executeByName, executeByPosition, publish, publishEvent,
-    verifyAuthToken, executeStreamedByName, executeStreamedByPosition, registerForPushNotifications,
-    registerSupportedEvents} from 'vantiq-react';
+import {init, authWithInternal, authWithOAuth, verifyAuthToken, createInternalUser, createOAuthUser,
+        select, selectOne, count, insert, update, upsert, deleteOne, deleteWhere,
+        executeByName, executeByPosition, executePublicByName, executePublicByPosition, executeStreamedByName, executeStreamedByPosition,
+        publish, publishEvent,
+        registerForPushNotifications, registerSupportedEvents} from 'vantiq-react';
 
 const {VantiqReact} = NativeModules;
 
-const VANTIQ_SERVER:string = 'https://staging.vantiq.com';
-const VANTIQ_NAMESPACE:string = 'react'
-const FORCELOGIN:boolean = true;  //  Normal scenario where we automatically establish a login
+//const VANTIQ_SERVER:string = 'https://staging.vantiq.com';
+//const VANTIQ_NAMESPACE:string = 'react'
+//const FORCELOGIN:boolean = true;  //  Normal scenario where we automatically establish a login
+
+const VANTIQ_SERVER:string = 'http://10.0.0.208:8080';
+const VANTIQ_NAMESPACE:string = 'Scratch1';
+const FORCELOGIN:boolean = true; //  Normal scenario where we automatically establish a login
+
+//const VANTIQ_SERVER:string = 'https://staging.vantiq.com';
+//const VANTIQ_NAMESPACE:string = 'mobiletest_rb_new'
+//const FORCELOGIN:boolean = false;  //  Don't establish login
 
 //const VANTIQ_SERVER:string = 'http://10.0.0.208:8080';
-//const VANTIQ_NAMESPACE:string = 'Scratch1';
-//const FORCELOGIN:boolean = true; //  Normal scenario where we automatically establish a login
+//const VANTIQ_NAMESPACE:string = 'consumerModeTesting';
+//const FORCELOGIN:boolean = false;  //  Don't establish login
 
 const VantiqInternal:string = "Internal";
 const VantiqOAuth:string = "OAuth";
@@ -40,6 +49,10 @@ export default function Index() {
           function(response:any) {
              authenticationState = response;
 
+              console.log("Server=" + VANTIQ_SERVER);
+              console.log("Namespace=" + VANTIQ_NAMESPACE);
+              console.log("Server Type=" + response.serverType);
+              
              if (response.authValid) {
                  setStartVisible(true);
                  registerForPushNotifications();
@@ -75,13 +88,16 @@ export default function Index() {
         VantiqReact.registerSupportedEvents(["pushNotification", "TestExecuteStreamedByName", "TestExecuteStreamedByPosition"]);
         const eventEmitter = new NativeEventEmitter(NativeModules.VantiqReact);
         let eventListener1 = eventEmitter.addListener("TestExecuteStreamedByName", event => {
+            console.log("TestExecuteStreamedByName Progress:");
             console.log(JSON.stringify(event,null,3)) // "someValue"
         });
         let eventListener2 = eventEmitter.addListener("TestExecuteStreamedByPosition", event => {
+            console.log("TestExecuteStreamedByPosition Progress:");
             console.log(JSON.stringify(event,null,3)) // "someValue"
         });
         let notifyListener = eventEmitter.addListener("pushNotification", event => {
             addToTranscript("Received notification: type = " + event.type);
+            console.log(JSON.stringify(event,null,3)) 
         });
         // Removes the event listeners once unmounted
         return () => {
@@ -125,12 +141,18 @@ export default function Index() {
     // helper to register for push notifications, called after authenticating
     function registerForPushNotifications() {
         VantiqReact.registerForPushNotifications().then(
-          function() {
+          function(results: any) {
               addToTranscript('Registered for Push Notifications');
+              console.log(`registerForPushNotifications results=${JSON.stringify(results, null, 3)}`);
           }, function(error:any) {
               reportTestError('Register for Push Notifications', error);
+              console.error(`registerForPushNotifications REJECT error=${JSON.stringify(error, null, 3)}`);
           });
     }
+
+    const onRegisterForPushNotifications = () => {
+        registerForPushNotifications();
+    };
     
     // helper to add text to the suite transcript
     const addToTranscript = (text:string) => {
@@ -282,7 +304,7 @@ export default function Index() {
         let limit: number = 100;
 
         where = null;
-        sortSpec = null;
+        //sortSpec = null;
 
         console.log('Invoke Select');
 
@@ -305,10 +327,10 @@ export default function Index() {
         };
 
         executeByName(procedureName, params).then(function (results: any) {
-                console.log(`execute results=${JSON.stringify(results, null, 3)}`)
+                console.log(`executeByName results=${JSON.stringify(results, null, 3)}`)
             },
             function (error: any) {
-                console.error(`execute REJECT error=${JSON.stringify(error, null, 3)}`)
+                console.error(`executeByName REJECT error=${JSON.stringify(error, null, 3)}`)
             })
     };
 
@@ -318,13 +340,45 @@ export default function Index() {
 
         let params: any = [10, 1000];
         executeByPosition(procedureName, params).then(function (results: any) {
-                console.log(`execute results=${JSON.stringify(results, null, 3)}`)
+                console.log(`executeByPosition results=${JSON.stringify(results, null, 3)}`)
             },
             function (error: any) {
-                console.error(`execute REJECT error=${JSON.stringify(error, null, 3)}`)
+                console.error(`executeByPosition REJECT error=${JSON.stringify(error, null, 3)}`)
             })
     };
-    
+
+    const onExecutePublicByName = () => {
+        let procedureName: string = "TestPublicProc";
+        let namespace: string = "Scratch1";
+        console.log('Invoke Public Execute By Name');
+
+        let params: any = {
+            aaa: 4,
+            bbb: 6
+        };
+
+        executePublicByName(namespace, procedureName, params).then(function (results: any) {
+                console.log(`executePublicByName results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`executePublicByName REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
+
+    const onExecutePublicByPosition = () => {
+        let procedureName: string = "TestPublicProc";
+        let namespace: string = "Scratch1";
+        
+        console.log('Invoke Public Execute By Position');
+
+        let params: any = [4, 6];
+        executePublicByPosition(namespace, procedureName, params).then(function (results: any) {
+                console.log(`onExecutePublicByPosition results=${JSON.stringify(results, null, 3)}`)
+            },
+            function (error: any) {
+                console.error(`onExecutePublicByPosition REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+    };
 
     const onExecuteStreamedByName = () => {
         let procedureName: string = "TestStreamedProc";
@@ -796,6 +850,19 @@ export default function Index() {
                                     onPress={onExecuteByPosition}
                                 />
                             </View>
+
+                            <View style={styles.navButtons}>
+                                <Button
+                                    title="Exec Public By Name"
+                                    color="#2255dd"
+                                    onPress={onExecutePublicByName}
+                                />
+                                <Button
+                                    title="Exec Public By Position"
+                                    color="#2255dd"
+                                    onPress={onExecutePublicByPosition}
+                                />
+                            </View>
                             <View style={styles.navButtons}>
 
                                 <Button
@@ -835,6 +902,16 @@ export default function Index() {
                                     onPress={onCreateOAuthUser}
                                 />
                             </View>
+
+                            {/*                            
+                            <View style={styles.navButtons}>
+                                <Button
+                                    title="Register for Push Notifications"
+                                    color="#aa0000"
+                                    onPress={onRegisterForPushNotifications}
+                                />
+                            </View>
+                            */}
 
                         </View>
                     ) : null
