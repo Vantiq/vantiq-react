@@ -4,7 +4,6 @@ import android.app.Activity;
 import com.facebook.react.bridge.*;
 import com.google.gson.JsonObject;
 import com.vantiqreact.misc.VLog;
-import io.vantiq.androidlib.Utilities;
 import io.vantiq.androidlib.VantiqAndroidLibrary;
 import io.vantiq.androidlib.misc.Account;
 
@@ -54,7 +53,7 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     {
         VLog.i(TAG, "init Version " + VERSION);
 
-        Utilities.initialize(getReactApplicationContext(), server, namespace, new Utilities.ResponseListener()
+        VantiqAndroidLibrary.initialize(getReactApplicationContext(), server, namespace, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object o)
@@ -111,8 +110,9 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     @ReactMethod
     public void add(double a, double b, Promise promise)
     {
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         //VLog.i(TAG, "add");
-        double sum = Utilities.add(a, b);
+        double sum = val.add(a, b);
         promise.resolve(sum);
     }
 
@@ -121,7 +121,9 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     {
         VLog.i(TAG, "authWithInternal");
 
-        Utilities.authWithInternal(username, password, new Utilities.ResponseListener()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.authWithInternal(username, password, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object o)
@@ -164,7 +166,10 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     public void authWithOAuth(String urlScheme, String clientId, Promise promise)
     {
         VLog.i(TAG, "authWithOAuth");
-        Utilities.authWithOAuth(this.getActivity(), urlScheme, clientId, new Utilities.ResponseListener()
+
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.authWithOAuth(this.getActivity(), urlScheme, clientId, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object o)
@@ -206,7 +211,9 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     {
         VLog.i(TAG, "serverType");
 
-        Utilities.serverType( new Utilities.ResponseListener()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.serverType( new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object o)
@@ -255,7 +262,10 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     public void verifyAuthToken(Promise promise)
     {
         VLog.i(TAG, "verifyAuthToken");
-        Utilities.refreshOAuthToken( new Utilities.ResponseListener()
+
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.refreshOAuthToken( new VantiqAndroidLibrary.ResponseListener()
         {
 
             @Override
@@ -301,8 +311,8 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     private void runServerOperation(String name, Promise promise,OnReadyToRunListener rtrListener)
     {
         new Thread(() -> {
-            VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-            Account a = val.account;
+            final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+            final Account a = val.account;
 
             if (a.getAccessToken() == null)
             {
@@ -346,7 +356,7 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
                 {
                     VLog.i(TAG, "Revalidating with Internal '" + name + "' on " + Thread.currentThread().getName());
 
-                    Utilities.authWithInternal(a.getUsername(),a.getPassword(), new Utilities.ResponseListener()
+                    val.authWithInternal(a.getUsername(),a.getPassword(), new VantiqAndroidLibrary.ResponseListener()
                     {
                         @Override
                         public void resolve(Object o)
@@ -371,7 +381,7 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
                 {
                     VLog.i(TAG, "Revalidating with OAuth '" + name + "' on " + Thread.currentThread().getName());
 
-                    Utilities.refreshOAuthToken(new Utilities.ResponseListener()
+                    val.refreshOAuthToken(new VantiqAndroidLibrary.ResponseListener()
                     {
 
                         @Override

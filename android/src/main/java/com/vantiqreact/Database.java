@@ -5,7 +5,6 @@ import com.facebook.react.bridge.*;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.google.gson.*;
 import com.vantiqreact.misc.VLog;
-import io.vantiq.androidlib.Utilities;
 import io.vantiq.androidlib.VantiqAndroidLibrary;
 import io.vantiq.androidlib.misc.Account;
 import io.vantiq.client.SortSpec;
@@ -363,7 +362,8 @@ public class Database
             }
         }
 
-        Utilities.count(type, whereObject, new Utilities.ResponseListener()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+        val.count(type, whereObject, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object result)
@@ -391,8 +391,8 @@ public class Database
     {
         String procedureName = "Registration.createInternalUser";
 
-        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-        Account a = val.account;
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+        final Account a = val.account;
 
         //
         //  Turn the "params" parameter into a JsonObject
@@ -407,8 +407,7 @@ public class Database
         if (lastName != null) obj.addProperty("lastName", lastName);
         if (phone != null) obj.addProperty("phone", phone);
 
-
-        Utilities.executePublic(a.getNamespace(), procedureName, paramsAsObject, new Utilities.ResponseListener()  {
+        val.executePublic(a.getNamespace(), procedureName, paramsAsObject, new VantiqAndroidLibrary.ResponseListener()  {
             @Override
             public void resolve(Object obj)
             {
@@ -451,9 +450,10 @@ public class Database
 
     public void createOAuthUser(String redirectUrl, String clientId, Promise promise)
     {
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
         String procedureName = "com.vantiq.ReactUtilities.createDRPCode";
 
-        Utilities.createOAuthUser(VantiqReactModule.INSTANCE.getActivity(), procedureName, redirectUrl, clientId, new Utilities.ResponseListener()
+        val.createOAuthUser(VantiqReactModule.INSTANCE.getActivity(), procedureName, redirectUrl, clientId, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object obj)
@@ -482,6 +482,7 @@ public class Database
     public void delete(String type, ReadableMap where, Promise promise)
     {
         JsonObject whereObject = null;
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
 
         //
         //  Turn the "where" parameter into a JsonObject
@@ -496,7 +497,7 @@ public class Database
             }
         }
 
-        Utilities.delete(type, whereObject, new Utilities.ResponseListener()
+        val.delete(type, whereObject, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object result)
@@ -514,8 +515,8 @@ public class Database
 
     public void deleteOne(String type, String id, Promise promise)
     {
-
-        Utilities.deleteOne(type, id, new Utilities.ResponseListener()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+        val.deleteOne(type, id, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object result)
@@ -533,8 +534,9 @@ public class Database
 
     private void execute(String procedureName, JsonElement params, Promise promise)
     {
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
 
-        Utilities.execute(procedureName, params, new Utilities.ResponseListener()
+        val.execute(procedureName, params, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object result)
@@ -609,7 +611,9 @@ public class Database
 
     private void executePublic(String namespace, String procedureName, JsonElement params, Promise promise)
     {
-        Utilities.executePublic(namespace, procedureName, params, new Utilities.ResponseListener()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.executePublic(namespace, procedureName, params, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object result)
@@ -701,7 +705,9 @@ public class Database
             effMaxFlushInterval = Long.valueOf(maxFlushInterval.longValue());
         }
 
-        Utilities.executeStreamed(procedureName, paramsAsObject, effMmaxBufferSize,effMaxFlushInterval, new Utilities.GenericCallback()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.executeStreamed(procedureName, paramsAsObject, effMmaxBufferSize,effMaxFlushInterval, new VantiqAndroidLibrary.GenericCallback()
         {
             @Override
             public void invoke(Object obj)
@@ -713,7 +719,7 @@ public class Database
                     sendEvent(VantiqReactModule.INSTANCE.reactContext, progressEvent, (WritableMap) convertJsonElementToReturnable(je));
                 }
             }
-        }, new Utilities.ResponseListener()
+        }, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object obj)
@@ -752,7 +758,9 @@ public class Database
             effMaxFlushInterval = Long.valueOf(maxFlushInterval.longValue());
         }
 
-        Utilities.executeStreamed(procedureName, paramsAsArray, effMmaxBufferSize, effMaxFlushInterval, new Utilities.GenericCallback()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.executeStreamed(procedureName, paramsAsArray, effMmaxBufferSize, effMaxFlushInterval, new VantiqAndroidLibrary.GenericCallback()
         {
             @Override
             public void invoke(Object obj)
@@ -765,7 +773,7 @@ public class Database
                 }
             }
         },
-        new Utilities.ResponseListener()
+        new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object obj)
@@ -802,7 +810,9 @@ public class Database
             }
         }
 
-        Utilities.insert(type, objectToInsert, new Utilities.ResponseListener()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.insert(type, objectToInsert, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object result)
@@ -836,7 +846,9 @@ public class Database
             }
         }
 
-        Utilities.publish(topic, messageObject, new Utilities.ResponseListener()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.publish(topic, messageObject, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object result)
@@ -870,7 +882,9 @@ public class Database
             }
         }
 
-        Utilities.publishEvent(resource, resourceId, messageObject, new Utilities.ResponseListener()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.publishEvent(resource, resourceId, messageObject, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object result)
@@ -889,7 +903,9 @@ public class Database
 
     public void registerForPushNotifications(Activity activity, Promise promise)
     {
-        Utilities.registerForPushNotifications(activity, new Utilities.GenericCallback()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.registerForPushNotifications(activity, new VantiqAndroidLibrary.GenericCallback()
         {
             @Override
             public void invoke(Object obj)
@@ -898,7 +914,7 @@ public class Database
                 sendEvent(VantiqReactModule.INSTANCE.reactContext, "pushNotification", (WritableMap) convertJsonElementToReturnable(je));
             }
         },
-        new Utilities.ResponseListener()
+        new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object result)
@@ -924,7 +940,9 @@ public class Database
             eventNamesArray = eventNames.toArrayList();
         }
 
-        Utilities.registerSupportedEvents(eventNamesArray, new Utilities.ResponseListener()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.registerSupportedEvents(eventNamesArray, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object result)
@@ -996,7 +1014,9 @@ public class Database
             }
         }
 
-        Utilities.select(type, propsArray, whereObject, sortSpec, limit, new Utilities.ResponseListener()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.select(type, propsArray, whereObject, sortSpec, limit, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object result)
@@ -1017,7 +1037,9 @@ public class Database
 
     public void selectOne(String type, String id, Promise promise)
     {
-        Utilities.selectOne(type, id, new Utilities.ResponseListener()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.selectOne(type, id, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object result)
@@ -1053,7 +1075,9 @@ public class Database
             }
         }
 
-        Utilities.update(type, id, objectToUpdate, new Utilities.ResponseListener()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.update(type, id, objectToUpdate, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object result)
@@ -1087,7 +1111,9 @@ public class Database
             }
         }
 
-        Utilities.upsert(type, objectToUpdate, new Utilities.ResponseListener()
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.upsert(type, objectToUpdate, new VantiqAndroidLibrary.ResponseListener()
         {
             @Override
             public void resolve(Object result)
