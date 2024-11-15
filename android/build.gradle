@@ -115,10 +115,8 @@ project.afterEvaluate {
   }
 }
 
-dependencies {
-  //
-  //   This matches the "example" app
-  //
+dependencies
+{
   implementation 'com.facebook.react:react-android:0.75.3'
 
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
@@ -138,12 +136,13 @@ dependencies {
 
   implementation 'com.auth0.android:jwtdecode:+'
 
-  //implementation files("/Users/steve/dev/RN/VantiqAndroidLibrary/lib/build/outputs/aar/lib-debug.aar")
-
   //
   //  The Vantiq Android Library - for now this is just in maven local
   //
   implementation 'io.vantiq:vantiq-ui-android:+'
-}
 
+  implementation 'com.google.android.gms:play-services-basement:17.1.1'
+  implementation 'com.google.android.gms:play-services-maps:17.0.0'
+  implementation 'com.google.android.gms:play-services-location:17.0.0'
+}
 

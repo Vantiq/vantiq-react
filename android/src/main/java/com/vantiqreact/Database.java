@@ -127,11 +127,23 @@ public class Database
 
     public void rejectErrorObject(String op, JsonObject error, Promise promise)
     {
-        VLog.e(TAG, "REJECTERROR1: op=" + op);
+        VLog.e(TAG, "REJECTERROROBJECT: op=" + op);
+        String errorMsg;
+        String errorCode;
+        int httpStatus;
 
-        String errorMsg =  error.get("errorMsg").getAsString();
-        String errorCode =  error.get("errorCode").getAsString();
-        int httpStatus = error.get("httpStatus").getAsInt();
+        if (error.isJsonNull())
+        {
+            errorMsg =  "Null Error";
+            errorCode =  "com.vantiq.null";
+            httpStatus = 0;
+        }
+        else
+        {
+            errorMsg =  error.get("errorMsg").getAsString();
+            errorCode =  error.get("errorCode").getAsString();
+            httpStatus = error.get("httpStatus").getAsInt();
+        }
 
         WritableMap wm = Arguments.createMap();
 
@@ -439,89 +451,24 @@ public class Database
 
     public void createOAuthUser(String redirectUrl, String clientId, Promise promise)
     {
-        String procedureName = "Registration.createDRPCode";
+        String procedureName = "com.vantiq.ReactUtilities.createDRPCode";
 
-        VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
-        Account a = val.account;
-
-        //
-        //  Turn the "params" parameter into a JsonObject
-        //
-        JsonObject paramsAsObject = new JsonObject();
-
-        Utilities.executePublic(a.getNamespace(), procedureName, paramsAsObject, new Utilities.ResponseListener()
+        Utilities.createOAuthUser(VantiqReactModule.INSTANCE.getActivity(), procedureName, redirectUrl, clientId, new Utilities.ResponseListener()
         {
             @Override
             public void resolve(Object obj)
             {
-                JsonElement je = (JsonElement) obj;
-                boolean failed = true;
+                Account a = VantiqAndroidLibrary.INSTANCE.account;
 
-                if (je.isJsonPrimitive())
-                {
-                    JsonPrimitive jp = je.getAsJsonPrimitive();
-
-                    if (jp.isString())
-                    {
-                        failed = false;
-                        String drpCode = jp.getAsString();
-
-                        VLog.i(TAG, "drpCode=" + drpCode);
-
-                        //
-                        //  Use OauthLoginActivity to register the user
-                        //
-                        VantiqReactModule vrm = VantiqReactModule.INSTANCE;
-
-                        Utilities.registerWithOAuth(vrm.getActivity(), redirectUrl, clientId, drpCode, new Utilities.ResponseListener()
-                        {
-                            @Override
-                            public void resolve(Object o)
-                            {
-                                Account a = VantiqAndroidLibrary.INSTANCE.account;
-
-                                WritableMap map = Arguments.createMap();
-                                map.putString("server", a.getServer());
-                                map.putString("userId", a.getHRusername());
-                                map.putString("username", a.getUsername());
-                                map.putString("serverType", a.getAuthType());
-                                map.putString("errorStr", a.getErrorMessage());
-                                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
-                                map.putInt("httpStatus", 0);
-                                promise.resolve(map);
-                            }
-
-                            @Override
-                            public void reject(JsonObject jsonObject)
-                            {
-                                Account a = VantiqAndroidLibrary.INSTANCE.account;
-
-                                WritableMap map = Arguments.createMap();
-                                map.putString("server", a.getServer());
-                                map.putString("userId", a.getHRusername());
-                                map.putString("username", a.getUsername());
-                                map.putString("serverType", a.getAuthType());
-                                map.putString("errorStr", a.getErrorMessage());
-                                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
-                                map.putInt("httpStatus", 0);
-                                map.putString("errorMsg", Error.VALIDATIONFAILED);
-                                promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
-                            }
-                        });
-                    }
-                }
-
-                if (failed)
-                {
-                    String errorCode = "drp.invalid.response";
-                    String errorMessage = "Invalid response";
-
-                    VLog.e(TAG, "REJECT ERROR: op=" + "createOAuthUser" + " code=" + errorCode + " msg=" + errorMessage);
-
-                    WritableMap map = computeError(errorCode, errorMessage, 0, null);
-                    promise.reject(errorCode, errorMessage, map);
-                }
-
+                WritableMap map = Arguments.createMap();
+                map.putString("server", a.getServer());
+                map.putString("userId", a.getHRusername());
+                map.putString("username", a.getUsername());
+                map.putString("serverType", a.getAuthType());
+                map.putString("errorStr", a.getErrorMessage());
+                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
+                map.putInt("httpStatus", 0);
+                promise.resolve(map);
             }
 
             @Override
@@ -530,8 +477,6 @@ public class Database
                 rejectErrorObject("createOAuthUser",error,promise);
             }
         });
-
-
     }
 
     public void delete(String type, ReadableMap where, Promise promise)
