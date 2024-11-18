@@ -60,7 +60,7 @@ def supportsNamespace() {
 
 android {
   if (supportsNamespace()) {
-    namespace "com.vantiqinterfacelibrary"
+    namespace "com.vantiqreact"
 
     sourceSets {
       main {
@@ -106,7 +106,7 @@ project.afterEvaluate {
   publishing {
     publications {
       libraryProject(MavenPublication) {
-        setGroupId 'io.vantiq.vantiqinterfacelibrary'
+        setGroupId 'io.vantiq.vantiqreact'
         setArtifactId 'networking-release'
         version '1.0'
         artifact bundleReleaseAar
