@@ -11,13 +11,13 @@ import {init, authWithInternal, authWithOAuth, verifyAuthToken, createInternalUs
 
 const {VantiqReact} = NativeModules;
 
-//const VANTIQ_SERVER:string = 'https://staging.vantiq.com';
-//const VANTIQ_NAMESPACE:string = 'react'
-//const FORCELOGIN:boolean = true;  //  Normal scenario where we automatically establish a login
+const VANTIQ_SERVER:string = 'https://staging.vantiq.com';
+const VANTIQ_NAMESPACE:string = 'react'
+const FORCELOGIN:boolean = true;  //  Normal scenario where we automatically establish a login
 
-const VANTIQ_SERVER:string = 'http://10.0.0.208:8080';
-const VANTIQ_NAMESPACE:string = 'Scratch1';
-const FORCELOGIN:boolean = true; //  Normal scenario where we automatically establish a login
+//const VANTIQ_SERVER:string = 'http://10.0.0.208:8080';
+//const VANTIQ_NAMESPACE:string = 'Scratch1';
+//const FORCELOGIN:boolean = true; //  Normal scenario where we automatically establish a login
 
 //const VANTIQ_SERVER:string = 'https://staging.vantiq.com';
 //const VANTIQ_NAMESPACE:string = 'mobiletest_rb_new'
@@ -361,6 +361,7 @@ export default function Index() {
         };
 
         executePublicByName(namespace, procedureName, params).then(function (results: any) {
+                console.log("michael=" + JSON.stringify(results));
                 console.log(`executePublicByName results=${JSON.stringify(results, null, 3)}`)
             },
             function (error: any) {
@@ -392,7 +393,7 @@ export default function Index() {
             delay:1000
         };
         
-        executeStreamedByName(procedureName, params, "TestExecuteStreamedByName").then(
+        executeStreamedByName(procedureName, params, 512, 500, "TestExecuteStreamedByName").then(
             function (results: any)
             {
                 console.log(`execute results=${JSON.stringify(results, null, 3)}`)
@@ -408,7 +409,7 @@ export default function Index() {
         console.log('Invoke Execute Streamed By Position');
 
         let params: any = [30, 1000];
-        executeStreamedByPosition(procedureName, params, "TestExecuteStreamedByPosition").then(function (results: any)
+        executeStreamedByPosition(procedureName, params, 512, 500, "TestExecuteStreamedByPosition").then(function (results: any)
             {
                 console.log(`execute results=${JSON.stringify(results, null, 3)}`)
             },
@@ -419,7 +420,7 @@ export default function Index() {
     const onCreateInternalUser = () => {
         console.log('Invoke CreateInternalUser');
 
-        createInternalUser("joeUser1","x", "scl1954@gmail.com","Steve","Langley","930-6458").then(function (results: any) {
+        createInternalUser("joeUser1","x", "scl1954@gmail.com","Steve","Langley", null).then(function (results: any) {
                 console.log(`createInternalUser results=${JSON.stringify(results, null, 3)}`)
             },
             function (error: any) {

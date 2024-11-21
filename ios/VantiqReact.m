@@ -1,5 +1,6 @@
 #import "VantiqReact.h"
 #import "VantiqUI.h"
+#import <React/RCTEventEmitter.h>
 
 /* error codes returned by rejected promises */
 /* veNotAuthorized: returned when a REST-related call fails because of an expired token that cannot be refreshed. This is to be expected and should be followed by a call to either authWithOAuth or authWithInternal. */
@@ -394,11 +395,20 @@ RCT_EXPORT_METHOD(registerForPushNotifications:(RCTPromiseResolveBlock)resolve
 
 // see comment for execute above
 - (void)executeStreamed:(NSString *)procedure params:(id)params
-    progressEvent:(NSString *)progressEvent resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject {
+    maxBufferSize:(int)maxBufferSize maxFlushInterval:(int)maxFlushInterval
+    progressEvent:(NSString *)progressEvent resolver:(RCTPromiseResolveBlock)resolve
+    rejector:(RCTPromiseRejectBlock)reject {
     [vui ensureValidToken:^(NSDictionary *response) {
         BOOL authValid = [response objectForKey:@"authValid"];
         if (authValid) {
-            [self sendJSONReject:reject];
+            NSString *paramsStr = [self dictionaryToJSONString:params];
+            paramsStr = paramsStr ? paramsStr : @"{}";
+            [vui.v executeStreamed:procedure params:paramsStr maxBufferSize:maxBufferSize maxFlushInterval:maxFlushInterval progressCallback:^(NSDictionary *progressDict) {
+                [self sendEventWithName:progressEvent body:progressDict];
+            } completionHandler:^(id data, NSHTTPURLResponse *response, NSError *error) {
+                data = data ? data : [[NSDictionary alloc] init];
+                [self resolveRESTPromise:data response:response error:error resolver:resolve rejector:reject];
+            }];
         } else {
             [self sendAuthReject:reject];
         }
@@ -406,12 +416,83 @@ RCT_EXPORT_METHOD(registerForPushNotifications:(RCTPromiseResolveBlock)resolve
 }
 
 RCT_EXPORT_METHOD(executeStreamedByName:(NSString *)procedure params:(id)params
+  maxBufferSize:(int)maxBufferSize maxFlushInterval:(int)maxFlushInterval
   progressEvent:(NSString *)progressEvent resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
-  [self executeStreamed:procedure params:params progressEvent:progressEvent resolver:resolve rejector:reject];
+    [self executeStreamed:procedure params:params maxBufferSize:maxBufferSize maxFlushInterval:maxFlushInterval progressEvent:progressEvent resolver:resolve rejector:reject];
 }
 RCT_EXPORT_METHOD(executeStreamedByPosition:(NSString *)procedure params:(id)params
+  maxBufferSize:(int)maxBufferSize maxFlushInterval:(int)maxFlushInterval
   progressEvent:(NSString *)progressEvent resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
-  [self executeStreamed:procedure params:params progressEvent:progressEvent resolver:resolve rejector:reject];
+  [self executeStreamed:procedure params:params maxBufferSize:maxBufferSize maxFlushInterval:maxFlushInterval progressEvent:progressEvent resolver:resolve rejector:reject];
+}
+
+// see comment for execute above
+- (void)executePublic:(NSString *)namespace procedure:(NSString *)procedure params:(id)params
+    resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject {
+    [vui ensureValidToken:^(NSDictionary *response) {
+        BOOL authValid = [response objectForKey:@"authValid"];
+        if (authValid) {
+            NSString *paramsStr = [self dictionaryToJSONString:params];
+            paramsStr = paramsStr ? paramsStr : @"{}";
+            [vui.v publicExecute:namespace procedure:procedure params:paramsStr completionHandler:^(id data, NSHTTPURLResponse *response, NSError *error) {
+                data = data ? data : [[NSDictionary alloc] init];
+                [self resolveRESTPromise:data response:response error:error resolver:resolve rejector:reject];
+            }];
+        } else {
+            [self sendAuthReject:reject];
+        }
+    }];
+}
+
+RCT_EXPORT_METHOD(executePublicByName:(NSString *)namespace procedure:(NSString *)procedure params:(id)params
+  resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
+  [self executePublic:namespace procedure:procedure params:params resolver:resolve rejector:reject];
+}
+RCT_EXPORT_METHOD(executePublicByPosition:(NSString *)namespace procedure:(NSString *)procedure params:(id)params
+  resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
+  [self executePublic:namespace procedure:procedure params:params resolver:resolve rejector:reject];
+}
+
+/*** Exported methods for creating new users
+ **/
+RCT_EXPORT_METHOD(createOAuthUser:(NSString *)urlScheme clientId:(NSString *)clientId
+  resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
+    [vui ensureValidToken:^(NSDictionary *response) {
+        BOOL authValid = [response objectForKey:@"authValid"];
+        if (authValid) {
+            [vui createOAuthUser:urlScheme clientId:clientId completionHandler:^(NSDictionary * _Nonnull response) {
+                NSString *errorStr = [response objectForKey:@"errorStr"];
+                if (!errorStr.length) {
+                    resolve(response);
+                } else {
+                    reject(veRESTError, errorStr, [self buildNSError:response]);
+                }
+            }];
+        } else {
+            [self sendAuthReject:reject];
+        }
+    }];
+}
+
+RCT_EXPORT_METHOD(createInternalUser:(NSString *)username password:(NSString *)password
+ email:(NSString *)email firstName:(NSString *)firstName lastName:(NSString *)lastName
+  phone:(NSString *)phone resolver:(RCTPromiseResolveBlock)resolve
+  rejector:(RCTPromiseRejectBlock)reject) {
+    [vui ensureValidToken:^(NSDictionary *response) {
+        BOOL authValid = [response objectForKey:@"authValid"];
+        if (authValid) {
+            [vui createInternalUser:username password:password email:email firstName:firstName lastName:lastName phone:phone completionHandler:^(NSDictionary * _Nonnull response) {
+                NSString *errorStr = [response objectForKey:@"errorStr"];
+                if (!errorStr.length) {
+                    resolve(response);
+                } else {
+                    reject(veRESTError, errorStr, [self buildNSError:response]);
+                }
+            }];
+        } else {
+            [self sendAuthReject:reject];
+        }
+    }];
 }
 
 /*** Exported methods for using React Event Emitter events
