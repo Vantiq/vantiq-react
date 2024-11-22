@@ -85,10 +85,7 @@ export default function Index() {
              addToTranscript('init fail: ' + error.errorStr);
            });
 
-        VantiqReact.registerSupportedEvents(["pushNotification", "TestExecuteStreamedByName", "TestExecuteStreamedByPosition"]).then(
-            function(response:any) {
-            }, function(error:any) {
-            });
+        VantiqReact.registerSupportedEvents(["pushNotification", "TestExecuteStreamedByName", "TestExecuteStreamedByPosition"]);
         const eventEmitter = new NativeEventEmitter(NativeModules.VantiqReact);
         let eventListener1 = eventEmitter.addListener("TestExecuteStreamedByName", event => {
             console.log("TestExecuteStreamedByName Progress:");
