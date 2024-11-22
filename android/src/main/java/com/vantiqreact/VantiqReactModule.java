@@ -445,16 +445,9 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
     }
 
     @ReactMethod
-    public void registerSupportedEvents(ReadableArray eventNames, Promise promise)
+    public void registerSupportedEvents(ReadableArray eventNames)
     {
-        this.runServerOperation("registerSupportedEvents", promise, new OnReadyToRunListener()
-        {
-            @Override
-            public void onReadyToRun()
-            {
-                db.registerSupportedEvents(eventNames,promise);
-            }
-        });
+        db.registerSupportedEvents(eventNames);
     }
 
 

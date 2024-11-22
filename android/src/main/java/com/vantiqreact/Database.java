@@ -931,7 +931,7 @@ public class Database
         });
     }
 
-    public void registerSupportedEvents(ReadableArray eventNames, Promise promise)
+    public void registerSupportedEvents(ReadableArray eventNames)
     {
         ArrayList eventNamesArray = null;
 
@@ -942,21 +942,7 @@ public class Database
 
         final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
 
-        val.registerSupportedEvents(eventNamesArray, new VantiqAndroidLibrary.ResponseListener()
-        {
-            @Override
-            public void resolve(Object result)
-            {
-                //JsonArray ja = (JsonArray) result;
-                promise.resolve(true);
-            }
-
-            @Override
-            public void reject(JsonObject error)
-            {
-                rejectErrorObject("registerSupportedEvents",error,promise);
-            }
-        });
+        val.registerSupportedEvents(eventNamesArray);
     }
 
 
