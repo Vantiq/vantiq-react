@@ -1507,7 +1507,7 @@ PODS:
     - React-perflogger (= 0.75.3)
     - React-utils (= 0.75.3)
   - SocketRocket (0.7.0)
-  - vantiq-react (0.1.0):
+  - vantiq-react (0.1.2):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1528,7 +1528,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - vantiq-sdk-ios (1.6.1)
+  - vantiq-sdk-ios (1.6.2)
   - vantiq-ui-ios (0.4.4):
     - AppAuth (~> 1.7.5)
     - Base64 (~> 1.1.2)
@@ -1808,8 +1808,8 @@ SPEC CHECKSUMS:
   ReactCodegen: ff95a93d5ab5d9b2551571886271478eaa168565
   ReactCommon: 289214026502e6a93484f4a46bcc0efa4f3f2864
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
-  vantiq-react: 19c2bf87c0dd4023acca373ab3939ce6fbe4009f
-  vantiq-sdk-ios: 96a624a722513cc0938750588909fa6135b7832f
+  vantiq-react: dde209766ab98d90c60eb5a7fe9b50226ad88249
+  vantiq-sdk-ios: 4cd792db1a2ba3b0830c462147194392b9cc382c
   vantiq-ui-ios: 492106ccdfcd4b003225a6a38f67839912f2327d
   Yoga: 4ef80d96a5534f0e01b3055f17d1e19a9fc61b63
 

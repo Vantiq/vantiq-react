@@ -48,32 +48,32 @@ extern NSString *APNSDeviceToken;
 }
 
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(nonnull NSDictionary *)userInfo
-    fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))fetchCompletionHandler {
-    NSLog(@"didReceiveRemoteNotification: userInfo (state = %ld) = %@", application.applicationState, userInfo);
-    if (vui) {
-        [vui processPushNotification:userInfo completionHandler:^(BOOL notificationHandled) {
-            if (notificationHandled) {
-                NSLog(@"didReceiveRemoteNotification: calling completion handler.");
-                fetchCompletionHandler(UIBackgroundFetchResultNewData);;
-            } else {
-                // this notification must be handled (or not) by the app
-                id notifyData = [userInfo objectForKey:@"data"];
-                if (notifyData) {
-                    NSString *dataType = [notifyData objectForKey:@"type"];
-                    NSLog(@"didReceiveRemoteNotification: unhandled notification type = '%@'.", dataType);
-                  
-                    // forward the notify data to the React Native app
-                    // see https://github.com/facebook/react-native/issues/15421
-                    VantiqReact *vr = [VantiqReact allocWithZone:nil];
-                    [vr sendEventWithName:@"pushNotification" body:notifyData];
-                }
-                fetchCompletionHandler(UIBackgroundFetchResultNewData);
-            }
-        }];
-    } else {
-        // user hasn't logged in so nothing to do yet
-        fetchCompletionHandler(UIBackgroundFetchResultNoData);
-    }
+  fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))fetchCompletionHandler {
+  NSLog(@"didReceiveRemoteNotification: userInfo (state = %ld) = %@", application.applicationState, userInfo);
+  if (vui) {
+      [vui processPushNotification:userInfo completionHandler:^(BOOL notificationHandled) {
+          if (notificationHandled) {
+              NSLog(@"didReceiveRemoteNotification: calling completion handler.");
+              fetchCompletionHandler(UIBackgroundFetchResultNewData);;
+          } else {
+              // this notification must be handled (or not) by the app
+              id notifyData = [userInfo objectForKey:@"data"];
+              if (notifyData) {
+                  NSString *dataType = [notifyData objectForKey:@"type"];
+                  NSLog(@"didReceiveRemoteNotification: unhandled notification type = '%@'.", dataType);
+                
+                  // forward the notify data to the React Native app
+                  // see https://github.com/facebook/react-native/issues/15421
+                  VantiqReact *vr = [VantiqReact allocWithZone:nil];
+                  [vr sendEventWithName:@"pushNotification" body:notifyData];
+              }
+              fetchCompletionHandler(UIBackgroundFetchResultNewData);
+          }
+      }];
+  } else {
+      // user hasn't logged in so nothing to do yet
+      fetchCompletionHandler(UIBackgroundFetchResultNoData);
+  }
 }
 
 - (void)application:(UIApplication *)application performFetchWithCompletionHandler:(void (^)(UIBackgroundFetchResult))fetchCompletionHandler {
