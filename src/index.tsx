@@ -123,6 +123,6 @@ export function registerForPushNotifications(): Promise<string> {
 	return VantiqReact.registerForPushNotifications();
 }
 
-export function registerSupportedEvents(eventNames:any[]): void {
+export function registerSupportedEvents(eventNames:string[]): void {
 	VantiqReact.registerSupportedEvents(eventNames);
 }

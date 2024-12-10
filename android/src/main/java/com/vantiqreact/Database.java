@@ -732,8 +732,8 @@ public class Database
             @Override
             public void reject(JsonObject jsonObject)
             {
-                JsonObject errors = jsonObject.getAsJsonObject("errors");
-                rejectErrorObject("executeStreamedByName",errors,promise);
+                JsonObject error = jsonObject.getAsJsonObject("error");
+                rejectErrorObject("executeStreamedByName",error,promise);
 
             }
         });
@@ -786,8 +786,8 @@ public class Database
             @Override
             public void reject(JsonObject jsonObject)
             {
-                JsonObject errors = jsonObject.getAsJsonObject("errors");
-                rejectErrorObject("executeStreamedByPosition",errors,promise);
+                JsonObject error = jsonObject.getAsJsonObject("error");
+                rejectErrorObject("executeStreamedByPosition",error,promise);
             }
         });
     }

@@ -390,7 +390,7 @@ export default function Index() {
             delay:1000
         };
         
-        executeStreamedByName(procedureName, params, 512, 500, "TestExecuteStreamedByName").then(
+        executeStreamedByName(procedureName, params, "TestExecuteStreamedByName", 512, 500).then(
             function (results: any)
             {
                 console.log(`execute results=${JSON.stringify(results, null, 3)}`)
@@ -406,7 +406,7 @@ export default function Index() {
         console.log('Invoke Execute Streamed By Position');
 
         let params: any = [30, 1000];
-        executeStreamedByPosition(procedureName, params, 512, 500, "TestExecuteStreamedByPosition").then(function (results: any)
+        executeStreamedByPosition(procedureName, params, "TestExecuteStreamedByPosition", 512, 500).then(function (results: any)
             {
                 console.log(`execute results=${JSON.stringify(results, null, 3)}`)
             },
