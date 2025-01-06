@@ -63,6 +63,10 @@ export function insert(type: string, object: any): Promise<string> {
     return VantiqReact.insert(type, object);
 }
 
+export function logout(): Promise<string> {
+    return VantiqReact.logout();
+}
+
 export function update(type: string, id:string, object: any): Promise<string> {
     return VantiqReact.update(type, id, object);
 }

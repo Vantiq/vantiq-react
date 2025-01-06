@@ -97,6 +97,18 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
         });
     }
 
+    @ReactMethod
+    public void logout(Promise promise)
+    {
+        this.runServerOperation("logout", promise, new OnReadyToRunListener()
+        {
+            @Override
+            public void onReadyToRun()
+            {
+                db.logout(promise);
+            }
+        });
+    }
 
     @ReactMethod
     public void multiply(double a, double b, Promise promise)

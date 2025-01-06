@@ -3,7 +3,7 @@ import { NativeModules, StyleSheet, Pressable, Text, View, TextInput, ScrollView
 import { RootSiblingParent } from 'react-native-root-siblings';
 import {NativeEventEmitter} from 'react-native';
 
-import {init, authWithInternal, authWithOAuth, verifyAuthToken, createInternalUser, createOAuthUser,
+import {init, authWithInternal, authWithOAuth, verifyAuthToken, createInternalUser, createOAuthUser, logout,
         select, selectOne, count, insert, update, upsert, deleteOne, deleteWhere,
         executeByName, executeByPosition, executePublicByName, executePublicByPosition, executeStreamedByName, executeStreamedByPosition,
         publish, publishEvent,
@@ -21,11 +21,11 @@ const FORCELOGIN:boolean = true;  //  Normal scenario where we automatically est
 
 //const VANTIQ_SERVER:string = 'https://staging.vantiq.com';
 //const VANTIQ_NAMESPACE:string = 'mobiletest_rb_new'
-//const FORCELOGIN:boolean = false;  //  Don't establish login
+//const FORCELOGIN:boolean = true;  //  Don't establish login
 
 //const VANTIQ_SERVER:string = 'http://10.0.0.208:8080';
 //const VANTIQ_NAMESPACE:string = 'consumerModeTesting';
-//const FORCELOGIN:boolean = false;  //  Don't establish login
+//const FORCELOGIN:boolean = true;  //  Don't establish login
 
 const VantiqInternal:string = "Internal";
 const VantiqOAuth:string = "OAuth";
@@ -748,6 +748,21 @@ export default function Index() {
 
     };
 
+    const onLogout = () => {
+
+        console.log('Invoke onLogout');
+
+
+        logout().then(function (results: any) {
+                console.log(`Logout successful`);
+                authenticationState.authValid = false;
+            },
+            function (error: any) {
+                console.error(`Logout REJECT error=${JSON.stringify(error, null, 3)}`)
+            })
+
+    };
+    
     // @ts-ignore
     // @ts-ignore
     return (
@@ -789,6 +804,11 @@ export default function Index() {
                                     title="Refresh"
                                     color="#aa0000"
                                     onPress={onRefresh}
+                                />
+                                <Button
+                                    title="Logout"
+                                    color="#aa0000"
+                                    onPress={onLogout}
                                 />
                             </View>
                             <View style={styles.navButtons}>

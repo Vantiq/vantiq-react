@@ -829,6 +829,26 @@ public class Database
         });
     }
 
+    public void logout(Promise promise)
+    {
+        final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
+
+        val.logout(new VantiqAndroidLibrary.ResponseListener()
+        {
+            @Override
+            public void resolve(Object result)
+            {
+                promise.resolve(true);
+            }
+
+            @Override
+            public void reject(JsonObject error)
+            {
+                rejectErrorObject("logout",error,promise);
+            }
+        });
+    }
+
     public void publish(String topic, ReadableMap message, Promise promise)
     {
         JsonObject messageObject = null;
