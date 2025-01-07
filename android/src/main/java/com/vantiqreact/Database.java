@@ -838,7 +838,17 @@ public class Database
             @Override
             public void resolve(Object result)
             {
-                promise.resolve(true);
+                final Account a = val.account;
+
+                WritableMap map = Arguments.createMap();
+                map.putString("server", a.getServer());
+                map.putString("userId", a.getHRusername());
+                map.putString("username", a.getUsername());
+                map.putString("serverType", a.getAuthType());
+                map.putString("errorStr", a.getErrorMessage());
+                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
+                map.putInt("httpStatus", 0);
+                promise.resolve(map);
             }
 
             @Override
