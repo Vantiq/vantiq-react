@@ -1,9 +1,9 @@
 PODS:
-  - AppAuth (1.7.5):
-    - AppAuth/Core (= 1.7.5)
-    - AppAuth/ExternalUserAgent (= 1.7.5)
-  - AppAuth/Core (1.7.5)
-  - AppAuth/ExternalUserAgent (1.7.5):
+  - AppAuth (1.7.6):
+    - AppAuth/Core (= 1.7.6)
+    - AppAuth/ExternalUserAgent (= 1.7.6)
+  - AppAuth/Core (1.7.6)
+  - AppAuth/ExternalUserAgent (1.7.6):
     - AppAuth/Core
   - Base64 (1.1.2)
   - boost (1.84.0)
@@ -1507,7 +1507,7 @@ PODS:
     - React-perflogger (= 0.75.3)
     - React-utils (= 0.75.3)
   - SocketRocket (0.7.0)
-  - vantiq-react (0.1.2):
+  - vantiq-react (0.1.6):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -1528,8 +1528,8 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - vantiq-sdk-ios (1.6.2)
-  - vantiq-ui-ios (0.4.4):
+  - vantiq-sdk-ios (1.6.3)
+  - vantiq-ui-ios (0.4.6):
     - AppAuth (~> 1.7.5)
     - Base64 (~> 1.1.2)
     - JWT (~> 2.2.0)
@@ -1743,7 +1743,7 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  AppAuth: 501c04eda8a8d11f179dbe8637b7a91bb7e5d2fa
+  AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
   Base64: cecfb41a004124895a7bcee567a89bae5a89d49b
   boost: 4cb898d0bf20404aab1850c656dcea009429d6c1
   DoubleConversion: 76ab83afb40bddeeee456813d9c04f67f78771b5
@@ -1808,11 +1808,11 @@ SPEC CHECKSUMS:
   ReactCodegen: ff95a93d5ab5d9b2551571886271478eaa168565
   ReactCommon: 289214026502e6a93484f4a46bcc0efa4f3f2864
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
-  vantiq-react: dde209766ab98d90c60eb5a7fe9b50226ad88249
-  vantiq-sdk-ios: 4cd792db1a2ba3b0830c462147194392b9cc382c
-  vantiq-ui-ios: 492106ccdfcd4b003225a6a38f67839912f2327d
+  vantiq-react: a649515c401bee5777582e726e40a70154d2b9f5
+  vantiq-sdk-ios: ad04da855a2882d0c8cbe5db10dad49c4a1bf57a
+  vantiq-ui-ios: d4c5364d05e8dc5a4b1579194f1ec22049baff4e
   Yoga: 4ef80d96a5534f0e01b3055f17d1e19a9fc61b63
 
 PODFILE CHECKSUM: 00da3c1c8d6d3f5f5dc26684954bdccbe15d1a05
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2

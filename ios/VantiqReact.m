@@ -98,6 +98,19 @@ RCT_EXPORT_METHOD(authWithInternal:(NSString *)username password:(NSString *)pas
   }];
 }
 
+RCT_EXPORT_METHOD(logout:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
+    [vui logout:^(NSDictionary * _Nullable response) {
+        dispatch_async(dispatch_get_main_queue(), ^ {
+          NSString *errorStr = [response objectForKey:@"errorStr"];
+          if (!errorStr.length) {
+            resolve(response);
+          } else {
+            reject(veNotAuthorized, errorStr, [self buildNSError:response]);
+          }
+        });
+    }];
+}
+
 // helper to build NSError instance for reject() calls
 - (NSError *)buildNSError:(NSDictionary *)responseDict {
   // use the special NSLocalizedDescriptionKey for overriding the localizedDescription property
