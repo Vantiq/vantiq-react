@@ -470,42 +470,28 @@ RCT_EXPORT_METHOD(executePublicByPosition:(NSString *)namespace procedure:(NSStr
  **/
 RCT_EXPORT_METHOD(createOAuthUser:(NSString *)urlScheme clientId:(NSString *)clientId
   resolver:(RCTPromiseResolveBlock)resolve rejector:(RCTPromiseRejectBlock)reject) {
-    [vui ensureValidToken:^(NSDictionary *response) {
-        BOOL authValid = [response objectForKey:@"authValid"];
-        if (authValid) {
-            [vui createOAuthUser:urlScheme clientId:clientId completionHandler:^(NSDictionary * _Nonnull response) {
-                NSString *errorStr = [response objectForKey:@"errorStr"];
-                if (!errorStr.length) {
-                    resolve(response);
-                } else {
-                    reject(veRESTError, errorStr, [self buildNSError:response]);
-                }
-            }];
-        } else {
-            [self sendAuthReject:reject];
-        }
-    }];
+	[vui createOAuthUser:urlScheme clientId:clientId completionHandler:^(NSDictionary * _Nonnull response) {
+		NSString *errorStr = [response objectForKey:@"errorStr"];
+		if (!errorStr.length) {
+			resolve(response);
+		} else {
+			reject(veRESTError, errorStr, [self buildNSError:response]);
+		}
+	}];
 }
 
 RCT_EXPORT_METHOD(createInternalUser:(NSString *)username password:(NSString *)password
  email:(NSString *)email firstName:(NSString *)firstName lastName:(NSString *)lastName
   phone:(NSString *)phone resolver:(RCTPromiseResolveBlock)resolve
   rejector:(RCTPromiseRejectBlock)reject) {
-    [vui ensureValidToken:^(NSDictionary *response) {
-        BOOL authValid = [response objectForKey:@"authValid"];
-        if (authValid) {
-            [vui createInternalUser:username password:password email:email firstName:firstName lastName:lastName phone:phone completionHandler:^(NSDictionary * _Nonnull response) {
-                NSString *errorStr = [response objectForKey:@"errorStr"];
-                if (!errorStr.length) {
-                    resolve(response);
-                } else {
-                    reject(veRESTError, errorStr, [self buildNSError:response]);
-                }
-            }];
-        } else {
-            [self sendAuthReject:reject];
-        }
-    }];
+	[vui createInternalUser:username password:password email:email firstName:firstName lastName:lastName phone:phone completionHandler:^(NSDictionary * _Nonnull response) {
+		NSString *errorStr = [response objectForKey:@"errorStr"];
+		if (!errorStr.length) {
+			resolve(response);
+		} else {
+			reject(veRESTError, errorStr, [self buildNSError:response]);
+		}
+	}];
 }
 
 /*** Exported methods for using React Event Emitter events
