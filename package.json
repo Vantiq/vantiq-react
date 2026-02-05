@@ -1,6 +1,6 @@
 {
   "name": "vantiq-react",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Vantiq UI React Module",
   "source": "./src/index.tsx",
   "main": "./lib/commonjs/index.js",
