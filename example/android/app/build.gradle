@@ -113,6 +113,12 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = false // Critical for correct zip alignment
+        }
+    }
 }
 
 dependencies {

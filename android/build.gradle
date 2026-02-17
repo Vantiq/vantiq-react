@@ -137,9 +137,9 @@ dependencies
   implementation 'com.auth0.android:jwtdecode:+'
 
   //
-  //  The Vantiq Android Library - for now this is just in maven local
+  //  The Vantiq Android Library
   //
-  implementation 'io.vantiq:vantiq-ui-android:1.0.15'
+  implementation 'io.vantiq:vantiq-ui-android:1.0.17'
 
   implementation 'com.google.android.gms:play-services-basement:17.1.1'
   implementation 'com.google.android.gms:play-services-maps:17.0.0'
