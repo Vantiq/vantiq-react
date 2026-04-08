@@ -15,6 +15,10 @@ const VANTIQ_SERVER:string = 'https://staging.vantiq.com';
 const VANTIQ_NAMESPACE:string = 'react'
 const FORCELOGIN:boolean = true;  //  Normal scenario where we automatically establish a login
 
+//const VANTIQ_SERVER:string = 'https://dev.vantiq.com';
+//const VANTIQ_NAMESPACE:string = 'br_vantiq_issues'
+//const FORCELOGIN:boolean = true;  //  Normal scenario where we automatically establish a login
+
 //const VANTIQ_SERVER:string = 'http://10.0.0.208:8080';
 //const VANTIQ_NAMESPACE:string = 'Scratch1';
 //const FORCELOGIN:boolean = true; //  Normal scenario where we automatically establish a login
@@ -43,7 +47,7 @@ export default function Index() {
     const [runningSuite, setRunningSuite] = useState(false);
     const [internalUsername, setInternalUsername] = useState('');
     const [internalPassword, setInternalPassword] = useState('');
-    
+
     useEffect(() => {
         init(VANTIQ_SERVER, VANTIQ_NAMESPACE).then(
           function(response:any) {
@@ -52,7 +56,7 @@ export default function Index() {
               console.log("Server=" + VANTIQ_SERVER);
               console.log("Namespace=" + VANTIQ_NAMESPACE);
               console.log("Server Type=" + response.serverType);
-              
+
              if (response.authValid) {
                  setStartVisible(true);
                  registerForPushNotifications();
@@ -97,7 +101,7 @@ export default function Index() {
         });
         let notifyListener = eventEmitter.addListener("pushNotification", event => {
             addToTranscript("Received notification: type = " + event.type);
-            console.log(JSON.stringify(event,null,3)) 
+            console.log(JSON.stringify(event,null,3))
         });
         // Removes the event listeners once unmounted
         return () => {
@@ -105,7 +109,7 @@ export default function Index() {
             eventListener2.remove();
             notifyListener.remove();
         };
-        
+
     }, []);
 
     // user presses the Start Running button
@@ -113,12 +117,12 @@ export default function Index() {
         setStartVisible(false);
         runTests();
     }
-    
+
     // user presses one of the Test Mode buttons
     function onModePress(mode:any) {
         setUIType(mode);
     }
-    
+
     // used for logging in to an Internal auth server, after the user has entered
     // a username and password (internalUsername, internalPassword)
     function onLoginPress() {
@@ -137,7 +141,7 @@ export default function Index() {
                 addToTranscript('Authentication error: ' + error.message + ", code: " + error.code);
             });
     }
-    
+
     // helper to register for push notifications, called after authenticating
     function registerForPushNotifications() {
         VantiqReact.registerForPushNotifications().then(
@@ -153,18 +157,18 @@ export default function Index() {
     const onRegisterForPushNotifications = () => {
         registerForPushNotifications();
     };
-    
+
     // helper to add text to the suite transcript
     const addToTranscript = (text:string) => {
         transcriptText += text + '\n';
         setTranscript(transcriptText);
     }
-    
+
     // helper to add any error string and code to the transcript
     const reportTestError = (op:string, error:any) => {
         addToTranscript(op + ' error: ' + error.message + ", code: " + error.code);
     }
-    
+
     // test harness for running in suite mode
     let lastVantiqID:string;
     const runTests = () => {
@@ -236,7 +240,7 @@ export default function Index() {
                 });
         }, 14000);
         setTimeout(function() {
-            VantiqReact.executeByName('sumTwo', {"val1":35, "val2":21}).then(
+            VantiqReact.executeByName('a.b.c.MyService.sumTwo', {"val1":35, "val2":21}).then(
                 function(data:any) {
                     addToTranscript('ExecuteByName successful: ' + JSON.stringify(data));
                 }, function(error:any) {
@@ -318,8 +322,8 @@ export default function Index() {
 
 
     const onExecuteByName = () => {
-        let procedureName: string = "TestProc";
-        console.log('Invoke Execute By Name');
+        let procedureName: string = "a.b.c.MyService.TestProc";
+        console.log('Invoke Execute By Name: ' + procedureName);
 
         let params: any = {
             aaa: 4,
@@ -369,7 +373,7 @@ export default function Index() {
     const onExecutePublicByPosition = () => {
         let procedureName: string = "TestPublicProc";
         let namespace: string = "Scratch1";
-        
+
         console.log('Invoke Public Execute By Position');
 
         let params: any = [4, 6];
@@ -389,7 +393,7 @@ export default function Index() {
             nnn:30,
             delay:1000
         };
-        
+
         executeStreamedByName(procedureName, params, "TestExecuteStreamedByName", 512, 500).then(
             function (results: any)
             {
@@ -435,7 +439,7 @@ export default function Index() {
                 console.error(`createOAuthUser REJECT error=${JSON.stringify(error, null, 3)}`)
             })
     };
-    
+
     const onDelete = () => {
         let type: string = "a.b.c.MyType";
         let object: any = {
@@ -762,7 +766,7 @@ export default function Index() {
             })
 
     };
-    
+
     // @ts-ignore
     // @ts-ignore
     return (
@@ -924,7 +928,7 @@ export default function Index() {
                                 />
                             </View>
 
-                            {/*                            
+                            {/*
                             <View style={styles.navButtons}>
                                 <Button
                                     title="Register for Push Notifications"

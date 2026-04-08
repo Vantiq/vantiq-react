@@ -9,7 +9,7 @@ buildscript {
   }
 
   dependencies {
-    classpath "com.android.tools.build:gradle:8.0.1"
+    classpath "com.android.tools.build:gradle:8.12.0"
     // noinspection DifferentKotlinGradleVersion
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
   }
@@ -117,7 +117,7 @@ project.afterEvaluate {
 
 dependencies
 {
-  implementation 'com.facebook.react:react-android:0.75.3'
+  implementation 'com.facebook.react:react-android:0.81.0'
 
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
@@ -139,7 +139,7 @@ dependencies
   //
   //  The Vantiq Android Library
   //
-  implementation 'io.vantiq:vantiq-ui-android:1.0.17'
+  implementation 'io.vantiq:vantiq-ui-android:1.0.18'
 
   implementation 'com.google.android.gms:play-services-basement:17.1.1'
   implementation 'com.google.android.gms:play-services-maps:17.0.0'
