@@ -12,7 +12,7 @@ import {init, authWithInternal, authWithOAuth, verifyAuthToken, createInternalUs
 const {VantiqReact} = NativeModules;
 
 const VANTIQ_SERVER:string = 'https://staging.vantiq.com';
-const VANTIQ_NAMESPACE:string = 'react'
+const VANTIQ_NAMESPACE:string = 'mobiletest_rb'
 const FORCELOGIN:boolean = true;  //  Normal scenario where we automatically establish a login
 
 //const VANTIQ_SERVER:string = 'https://dev.vantiq.com';
@@ -24,7 +24,7 @@ const FORCELOGIN:boolean = true;  //  Normal scenario where we automatically est
 //const FORCELOGIN:boolean = true; //  Normal scenario where we automatically establish a login
 
 //const VANTIQ_SERVER:string = 'https://staging.vantiq.com';
-//const VANTIQ_NAMESPACE:string = 'mobiletest_rb_new'
+//const VANTIQ_NAMESPACE:string = 'mobiletest_rb"
 //const FORCELOGIN:boolean = true;  //  Don't establish login
 
 //const VANTIQ_SERVER:string = 'http://10.0.0.208:8080';
@@ -726,29 +726,22 @@ export default function Index() {
         }
     };
 
-    const onRefresh = () => {
+    const onVerifyAuthToken = () => {
 
-        console.log('Invoke onRefresh');
+        console.log('Invoke verifyAuthToken');
 
         authenticationState.authValid = false;
-
-        if (authenticationState.serverType == VantiqInternal) {
-            console.error(`Can't Refresh Internal`);
-
-        } else if (authenticationState.serverType == VantiqOAuth) {
-            console.log("Refesh: OAUTH");
-            // vantiqReact on staging
-            verifyAuthToken().then(
-                function (newAuthState: any) {
-                    authenticationState = newAuthState;
-                    let auth: string = JSON.stringify(authenticationState, null, 3)
-                    console.log(`Validation: authValid=${authenticationState.authValid} authState=${auth}`);
-                },
-                function (error: any) {
-                    console.error(`Validation OAUTH REJECT error=${JSON.stringify(error)}`);
-                }
-            );
-        }
+        
+        verifyAuthToken().then(
+            function (newAuthState: any) {
+                authenticationState = newAuthState;
+                let auth: string = JSON.stringify(authenticationState, null, 3)
+                console.log(`Validation: authValid=${authenticationState.authValid} authState=${auth}`);
+            },
+            function (error: any) {
+                console.error(`Validation AUTH REJECT error=${JSON.stringify(error)}`);
+            }
+        );
 
     };
 
@@ -805,9 +798,9 @@ export default function Index() {
                                     onPress={onValidate}
                                 />
                                 <Button
-                                    title="Refresh"
+                                    title="VerifyAuthToken"
                                     color="#aa0000"
-                                    onPress={onRefresh}
+                                    onPress={onVerifyAuthToken}
                                 />
                                 <Button
                                     title="Logout"
