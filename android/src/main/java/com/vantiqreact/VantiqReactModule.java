@@ -149,6 +149,7 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
                 map.putDouble("expiresAt", (double) a.getExpiresAt());
                 map.putString("serverType", a.getAuthType());
                 map.putString("errorStr", a.getErrorMessage());
+                map.putString("accessToken", a.getAccessToken());
                 map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
                 map.putInt("httpStatus", 0);
                 promise.resolve(map);
@@ -166,6 +167,7 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
                 map.putDouble("expiresAt", a.getExpiresAt());
                 map.putString("serverType", a.getAuthType());
                 map.putString("errorStr", a.getErrorMessage());
+                map.putString("accessToken", a.getAccessToken());
                 map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
                 map.putInt("httpStatus", 0);
                 map.putString("errorMsg", Error.VALIDATIONFAILED);
@@ -194,6 +196,7 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
                 map.putString("username", a.getUsername());
                 map.putString("serverType", a.getAuthType());
                 map.putString("errorStr", a.getErrorMessage());
+                map.putString("accessToken", a.getAccessToken());
                 map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
                 map.putInt("httpStatus", 0);
                 promise.resolve(map);
@@ -210,6 +213,7 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
                 map.putString("username", a.getUsername());
                 map.putString("serverType", a.getAuthType());
                 map.putString("errorStr", a.getErrorMessage());
+                map.putString("accessToken", a.getAccessToken());
                 map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
                 map.putInt("httpStatus", 0);
                 map.putString("errorMsg", Error.VALIDATIONFAILED);
@@ -277,11 +281,10 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
 
         final VantiqAndroidLibrary val = VantiqAndroidLibrary.INSTANCE;
 
-        val.refreshOAuthToken( new VantiqAndroidLibrary.ResponseListener()
+        this.runServerOperation("verifyAuthToken", promise, new OnReadyToRunListener()
         {
-
             @Override
-            public void resolve(Object o)
+            public void onReadyToRun()
             {
                 Account a = VantiqAndroidLibrary.INSTANCE.account;
                 WritableMap map = Arguments.createMap();
@@ -290,25 +293,10 @@ public class VantiqReactModule extends ReactContextBaseJavaModule
                 map.putString("username", a.getUsername());
                 map.putString("serverType", a.getAuthType());
                 map.putString("errorStr", a.getErrorMessage());
+                map.putString("accessToken", a.getAccessToken());
                 map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
                 map.putInt("httpStatus", 0);
                 promise.resolve(map);
-            }
-
-            @Override
-            public void reject(JsonObject jsonObject)
-            {
-                Account a = VantiqAndroidLibrary.INSTANCE.account;
-                WritableMap map = Arguments.createMap();
-                map.putString("server", a.getServer());
-                map.putString("userId", a.getHRusername());
-                map.putString("username", a.getUsername());
-                map.putString("serverType", a.getAuthType());
-                map.putString("errorStr", a.getErrorMessage());
-                map.putBoolean("authValid", (a.getAccessToken() == null ? false : true));
-                map.putInt("httpStatus", 0);
-                map.putString("errorMsg", Error.VALIDATIONFAILED);
-                promise.reject(Error.veNotAuthorized, a.getErrorMessage(), map);
             }
         });
     }
